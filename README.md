@@ -3,7 +3,7 @@
 Instruments and effects for MPC standalone. Each plugin has its own source,
 license and release package; installable ZIPs belong in GitHub Releases.
 
-| Image | Plugin | Type |
+|  | Plugin | Type |
 | --- | --- | --- |
 | <a href="Monoslide/README.md"><img src="media/monoslide.png" width="160" alt="MonoSlide Voice page"></a> | [MonoSlide](Monoslide/README.md) | Instrument |
 
