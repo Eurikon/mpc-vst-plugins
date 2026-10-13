@@ -1,5 +1,6 @@
 [
   {
+    "id": "monoslide",
     "version": "1.0.2",
     "device": "MPC Live II Retro",
     "firmware": "3.9.1",
