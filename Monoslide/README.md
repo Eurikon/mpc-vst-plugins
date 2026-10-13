@@ -60,15 +60,6 @@ CPU percentages measure a single core's 128-frame audio-block budget at 44,100 H
 The current package includes the measured CPU result and retains the tested library SHA-256 `6d0ecf239f059286e549e6c3589a2af5a61d141d450452b3c2a37407299fc3e8`.<br>
 OS 2.x, Gen2 and other device/firmware combinations remain unverified.
 
-## Compatibility and catalog
-
-Keep UID `TcMs`, library `monoslide.so` and parameter order fixed.<br>
-Append new parameters; changing existing indices breaks saved projects and requires a major public version change.
-
-[catalog/monoslide.json](catalog/monoslide.json) identifies `Eurikon/mpc-vst-plugins` and selects `MonoSlide-*-mpc-armv7.zip` release assets.<br>
-Publish and submit only the exact final ZIP after hardware sign-off.<br>
-No versions or checksums belong in the registry entry.
-
 ## Licensing
 
 GPL-3.0-or-later, with MIT Open303 components and public-domain Ooura FFT.<br>
