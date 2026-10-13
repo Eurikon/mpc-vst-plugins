@@ -11,9 +11,9 @@ license and release package; installable ZIPs belong in GitHub Releases.
 
 Follow each plugin's README for its commands and pinned external dependencies.
 No Docker images, Akai firmware or local development toolchain are bundled here.
-MonoSlide uses the external [sd88me MPC VST build tools](https://github.com/sd88me/mpc-vst-plugins).
+Build workflows use the external [sd88me MPC VST build tools](https://github.com/sd88me/mpc-vst-plugins).
 That project established the standalone plugin build, package and community
-catalog workflow on which this port builds.
+catalog workflow used by this collection.
 
 ## Releases and installation
 
