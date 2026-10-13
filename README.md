@@ -1,4 +1,4 @@
-# Twisted Cable MPC Plugins
+# Twisted Cable - MPC Plugins
 
 Instruments and effects for MPC standalone.<br>
 Each plugin has its own source, license and release package.
