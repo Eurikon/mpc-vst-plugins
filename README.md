@@ -23,5 +23,4 @@ The [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb) can inst
 ## Licensing
 
 Licenses apply per plugin, including its third-party notices.<br>
-There is no single license covering the entire collection.<br>
-Open MPC releases from this project are open source and free of charge; paid releases are outside this project's publication policy unless AKAI establishes an authorized commercial platform.
+There is no single license covering the entire collection.
