@@ -2,6 +2,7 @@
 !/.github/
 !/Monoslide/
 !/.github/workflows/
+!/.github/scripts/
 !/Monoslide/assets/
 !/Monoslide/catalog/
 !/Monoslide/licenses/
@@ -13,6 +14,8 @@
 !/.gitignore
 !/.github/workflows/monoslide-check.yml
 !/.github/workflows/monoslide-release.yml
+!/.github/workflows/plugin-download-links.yml
+!/.github/scripts/update_download_links.py
 !/Monoslide/README.md
 !/Monoslide/LICENSE
 !/Monoslide/Makefile

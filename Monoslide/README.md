@@ -2,7 +2,7 @@
 
 [![Build checks](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/monoslide-check.yml/badge.svg?branch=main)](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/monoslide-check.yml)
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Install with Plugin Manager USB](https://img.shields.io/badge/Install-Plugin_Manager_USB-brightgreen?logo=github)](https://github.com/Eurikon/plugin-manager-usb)
+[![Download 1.0.2](https://img.shields.io/badge/Download-1.0.2-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/monoslide-v1.0.2/MonoSlide-1.0.2-mpc-armv7.zip)
 
 ![MonoSlide Voice page](../media/monoslide.png)
 
@@ -11,7 +11,7 @@ It uses MPC's sequencer and receives MIDI on all channels, with last-note priori
 There are 18 sound parameters across Voice and Expert pages, plus a shared theme selector: Default, Copper, Glacier, Moss, Amethyst and Ember.<br>
 The theme is saved with the instrument; older states select Default.
 
-**Current development version:** 1.0.2, targeting ARMv7 and MPC OS 3.x.
+**Current release:** 1.0.2, targeting ARMv7 and MPC OS 3.x.
 
 ## Build and test
 

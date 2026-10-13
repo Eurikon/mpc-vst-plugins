@@ -1,0 +1,44 @@
+name: Plugin download links
+
+on:
+  release:
+    types: [published, edited, deleted, unpublished]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plugin-download-links
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - name: Update and verify plugin downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 .github/scripts/update_download_links.py --repo "$GITHUB_REPOSITORY"
+          python3 .github/scripts/update_download_links.py --repo "$GITHUB_REPOSITORY" --check
+      - name: Commit changed plugin pages
+        run: |
+          python3 - <<'PY'
+          import re
+          import subprocess
+
+          changed = subprocess.check_output(["git", "diff", "--name-only", "-z"]).split(b"\0")
+          paths = [path.decode() for path in changed if path]
+          if any(not re.fullmatch(r"[^/]+/README\.md", path) for path in paths):
+              raise SystemExit("Refusing changes outside plugin README files")
+          if paths:
+              subprocess.run(["git", "add", "--", *paths], check=True)
+              subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+              subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=True)
+              subprocess.run(["git", "commit", "-m", "Update plugin download links"], check=True)
+              subprocess.run(["git", "push"], check=True)
+          PY
