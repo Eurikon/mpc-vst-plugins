@@ -9,6 +9,7 @@
 !/Monoslide/tests/
 !/Monoslide/src/dsp/
 !/README.md
+!/tested.json
 !/.gitignore
 !/.github/workflows/monoslide-check.yml
 !/.github/workflows/monoslide-release.yml
