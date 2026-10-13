@@ -1,5 +1,5 @@
-MPC_VST ?= ../toolchain/upstream
-PINNED_MPC_VST := $(abspath ../toolchain/upstream)
+MPC_VST ?= ../../toolchain/upstream
+PINNED_MPC_VST := $(abspath ../../toolchain/upstream)
 MPC_VST_COMMIT := fc1ea20ff83779d3f47fb43177f5284f59e57a99
 TOOLS := $(MPC_VST)/tools
 ifneq ($(filter default undefined,$(origin CXX)),)
@@ -27,8 +27,8 @@ host-test:
 	bash $(TOOLS)/test_port.sh vst.json
 
 ART_PYTHON ?= python3.11
-ART_VENV ?= $(if $(wildcard ../toolchain/build/art-venv/bin/python),../toolchain/build/art-venv,build/art-venv)
-ART_BROWSER ?= $(if $(wildcard ../toolchain/build/browser),../toolchain/build/browser,build/browser)
+ART_VENV ?= $(if $(wildcard ../../toolchain/build/art-venv/bin/python),../../toolchain/build/art-venv,build/art-venv)
+ART_BROWSER ?= $(if $(wildcard ../../toolchain/build/browser),../../toolchain/build/browser,build/browser)
 ART_REQUIREMENTS ?= requirements-art.txt
 
 $(ART_VENV)/bin/python:

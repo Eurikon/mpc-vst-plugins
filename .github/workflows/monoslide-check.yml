@@ -1,9 +1,9 @@
 name: MonoSlide checks
 on:
   push:
-    paths: ['Monoslide/**', '.github/workflows/monoslide-check.yml']
+    paths: ['Instruments/Monoslide/**', '.github/workflows/monoslide-check.yml']
   pull_request:
-    paths: ['Monoslide/**', '.github/workflows/monoslide-check.yml']
+    paths: ['Instruments/Monoslide/**', '.github/workflows/monoslide-check.yml']
 permissions:
   contents: read
 jobs:

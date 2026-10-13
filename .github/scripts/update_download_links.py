@@ -16,6 +16,7 @@ from urllib.request import Request, urlopen
 VERSION = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 BADGE = re.compile(r"\[!\[(?:Download|Install)\b[^\]\n]*\]\([^\)\n]+\)\]\([^\)\n]+\)")
 CURRENT = re.compile(r"(?m)^(\*\*Current release:\*\*\s*)([^\n]*)$")
+CATEGORIES = {"Instruments", "Effects", "Midi", "Utilities"}
 
 
 def load_releases(repo: str, source: Path | None) -> list[dict[str, Any]]:
@@ -50,11 +51,15 @@ def tracked_registries(root: Path, repo: str) -> list[tuple[Path, str]]:
     registries = []
     seen = set()
     for name in sorted(filter(None, result.stdout.split("\0"))):
-        parts = Path(name).parts
-        if len(parts) != 3 or parts[1] != "catalog":
+        parts = name.split("/")
+        if "\\" in name or any(ord(c) < 32 for c in name) or any(part in {"", ".", ".."} for part in parts):
+            raise ValueError(f"Invalid registry path: {name}")
+        legacy = len(parts) == 3 and parts[1] == "catalog" and parts[0] not in CATEGORIES
+        categorized = len(parts) == 4 and parts[0] in CATEGORIES and parts[2] == "catalog"
+        if not legacy and not categorized:
             continue
         path = root / name
-        if not path.resolve().is_relative_to(root) or path.is_symlink():
+        if not path.resolve().is_relative_to(root) or any((root / Path(*parts[:i])).is_symlink() for i in range(1, len(parts) + 1)):
             raise ValueError(f"Invalid registry path: {name}")
         entry = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(entry, dict):
@@ -66,12 +71,12 @@ def tracked_registries(root: Path, repo: str) -> list[tuple[Path, str]]:
             raise ValueError(f"Missing plugin identity or asset pattern: {name}")
         if pattern.count("*") != 1 or any(c in pattern for c in "?[]/\\") or not pattern.endswith(".zip"):
             raise ValueError(f"Expected one version wildcard in ZIP asset pattern: {name}")
-        readme = root / parts[0] / "README.md"
+        readme = path.parent.parent / "README.md"
         if identity in seen or readme in seen:
             raise ValueError(f"Conflicting plugin registry: {name}")
         seen.update((identity, readme))
         if not readme.is_file() or readme.is_symlink() or not readme.resolve().is_relative_to(root):
-            raise ValueError(f"Missing or invalid plugin README: {parts[0]}/README.md")
+            raise ValueError(f"Missing or invalid plugin README: {readme.relative_to(root)}")
         registries.append((readme, pattern))
     if not registries:
         raise ValueError("No tracked plugin registries match the requested repository")

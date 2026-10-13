@@ -19,11 +19,11 @@ jobs:
       tag: monoslide-v${{ inputs.version }}
       version: ${{ inputs.version }}
       tools_ref: fc1ea20ff83779d3f47fb43177f5284f59e57a99
-      vst_dir: Monoslide
-      build: ./Monoslide/build.sh
-      host_test: ./Monoslide/test.sh
+      vst_dir: Instruments/Monoslide
+      build: ./Instruments/Monoslide/build.sh
+      host_test: ./Instruments/Monoslide/test.sh
       plugin_id: monoslide
       license: GPL-3.0-or-later
-      extra: Monoslide/LICENSE:LICENSE Monoslide/licenses:licenses
+      extra: Instruments/Monoslide/LICENSE:LICENSE Instruments/Monoslide/licenses:licenses
       about: "Monophonic acid bass instrument for MPC standalone."
       dry_run: ${{ inputs.dry_run }}

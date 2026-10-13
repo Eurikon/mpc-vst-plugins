@@ -2,7 +2,7 @@
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 cd "$here"
-MPC_VST="$(cd "${MPC_VST:-../toolchain/upstream}" && pwd)"
+MPC_VST="$(cd "${MPC_VST:-../../toolchain/upstream}" && pwd)"
 version="${1:?Usage: ./package.sh X.Y.Z [OUTPUT_DIR]}"
 [[ $# -le 2 ]] || { echo "Usage: ./package.sh X.Y.Z [OUTPUT_DIR]" >&2; exit 1; }
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Expected X.Y.Z" >&2; exit 1; }

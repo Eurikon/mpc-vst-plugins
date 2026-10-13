@@ -8,7 +8,7 @@ Each plugin has its own source, license and release package.
 
 |  | Plugin | Type |
 | --- | --- | --- |
-| <a href="Monoslide/README.md"><img src="media/monoslide.png" width="160" alt="MonoSlide Voice page"></a> | [MonoSlide](Monoslide/README.md) | Instrument |
+| <a href="Instruments/Monoslide/README.md"><img src="media/monoslide.png" width="160" alt="MonoSlide Voice page"></a> | [MonoSlide](Instruments/Monoslide/README.md) | Instrument |
 
 ## Hardware and software compatibility
 

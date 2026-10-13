@@ -4,7 +4,7 @@
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Download 1.0.2](https://img.shields.io/badge/Download-1.0.2-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/monoslide-v1.0.2/MonoSlide-1.0.2-mpc-armv7.zip)
 
-![MonoSlide Voice page](../media/monoslide.png)
+![MonoSlide Voice page](../../media/monoslide.png)
 
 MonoSlide is a monophonic acid bass instrument ported from TwinSlide's MonoSlide voice.<br>
 It uses MPC's sequencer and receives MIDI on all channels, with last-note priority, overlapping-note slide and velocity-triggered accent.<br>
@@ -26,7 +26,7 @@ cd mpc-vst-plugins
 git clone https://github.com/sd88me/mpc-vst-plugins.git ../mpc-vst-build-tools
 git -C ../mpc-vst-build-tools checkout fc1ea20ff83779d3f47fb43177f5284f59e57a99
 export MPC_VST="$(cd ../mpc-vst-build-tools && pwd)"
-cd Monoslide
+cd Instruments/Monoslide
 ./test.sh
 make skin
 ./build.sh
