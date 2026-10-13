@@ -11,7 +11,7 @@ license and release package; installable ZIPs belong in GitHub Releases.
 
 Follow each plugin's README for its commands and pinned external dependencies.
 No Docker images, Akai firmware or local development toolchain are bundled here.
-Build workflows use the external [sd88me MPC VST build tools](https://github.com/sd88me/mpc-vst-plugins).
+<br>Build workflows use the external [sd88me MPC VST build tools](https://github.com/sd88me/mpc-vst-plugins).
 That project established the standalone plugin build, package and community
 catalog workflow used by this collection.
 
