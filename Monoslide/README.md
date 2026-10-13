@@ -71,5 +71,4 @@ No versions or checksums belong in the registry entry.
 ## Licensing
 
 GPL-3.0-or-later, with MIT Open303 components and public-domain Ooura FFT.<br>
-See [LICENSE](LICENSE), `licenses/` and [src/VENDORED.md](src/VENDORED.md) for DSP provenance.<br>
-No firmware or ROMs are included.
+See [LICENSE](LICENSE), `licenses/` and [src/VENDORED.md](src/VENDORED.md) for DSP provenance.
