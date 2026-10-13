@@ -3,9 +3,9 @@
 Instruments and effects for MPC standalone. Each plugin has its own source,
 license and release package; installable ZIPs belong in GitHub Releases.
 
-| Plugin | Type | License | Source |
-| --- | --- | --- | --- |
-| MonoSlide | Monophonic acid bass instrument | GPL-3.0-or-later | [Build and usage](Monoslide/README.md) |
+| Image | Plugin | Type |
+| --- | --- | --- |
+| <a href="Monoslide/README.md"><img src="media/monoslide.png" width="160" alt="MonoSlide Voice page"></a> | [MonoSlide](Monoslide/README.md) | Instrument |
 
 ## Build from source
 
