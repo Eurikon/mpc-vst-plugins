@@ -7,6 +7,10 @@ Each plugin has its own source, license and release package; installable ZIPs be
 | --- | --- | --- |
 | <a href="Monoslide/README.md"><img src="media/monoslide.png" width="160" alt="MonoSlide Voice page"></a> | [MonoSlide](Monoslide/README.md) | Instrument |
 
+## Hardware and software compatibility
+
+**Tested locally:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1.
+
 ## Build from source
 
 Follow each plugin's README for its commands and pinned external dependencies.<br>
