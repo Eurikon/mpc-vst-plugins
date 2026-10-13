@@ -25,5 +25,5 @@ jobs:
       plugin_id: monoslide
       license: GPL-3.0-or-later
       extra: Monoslide/LICENSE:LICENSE Monoslide/licenses:licenses
-      about: "Monophonic acid bass voice. See Monoslide/README.md for recorded hardware checks and the final package smoke-test requirements."
+      about: "Monophonic acid bass instrument for MPC standalone."
       dry_run: ${{ inputs.dry_run }}

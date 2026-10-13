@@ -1,5 +1,9 @@
 # MonoSlide for MPC
 
+[![Build checks](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/monoslide-check.yml/badge.svg?branch=main)](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/monoslide-check.yml)
+[![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Install with Plugin Manager USB](https://img.shields.io/badge/Install-Plugin_Manager_USB-brightgreen?logo=github)](https://github.com/Eurikon/plugin-manager-usb)
+
 ![MonoSlide Voice page](../media/monoslide.png)
 
 MonoSlide is a monophonic acid bass instrument ported from TwinSlide's MonoSlide voice.<br>
@@ -29,16 +33,17 @@ make skin
 ./package.sh 1.0.2
 ```
 
-- `build.sh` applies or verifies `skin-tools.patch`, generates the skin and parameter table, then builds the ARM plugin using the upstream Docker workflow.
+- `build.sh` applies or verifies `skin-tools.patch` and `release-tools.patch`, generates the skin and parameter table, then builds the ARM plugin using the upstream Docker workflow.
 - `test.sh` runs engine tests and the original Linux x86 ASan/UBSan wrapper test, using Docker on macOS or ARM hosts.
 - `make skin` creates local page previews with an isolated Python/Playwright environment under ignored `build/art-venv/` and `build/browser/`, using [requirements-art.txt](requirements-art.txt).<br>
   Existing development caches are reused when available.<br>
   Override `ART_PYTHON`, `ART_VENV` or `ART_BROWSER` as needed.
 - `package.sh` creates `dist/MonoSlide-1.0.2-mpc-armv7.zip` and runs the upstream catalog validator.<br>
-  CPU metadata is included only when a valid `bench.txt` exists.
+  CPU metadata is included only when a valid `bench.txt` exists.<br>
+  An optional second argument selects another output directory.
 
 Outputs are under ignored `build/` and `dist/`.<br>
-The patch corrects themed dropdown rendering and resource names; it does not change DSP or parameters.
+The patches correct themed dropdown rendering, resource names and generated installation instructions; they do not change DSP or parameters.
 
 ## Installation
 
@@ -52,6 +57,7 @@ Its installer executes as root and restarts the MPC application; SSH is not requ
 
 - Playback, project save/reload and two playing instances: confirmed on hardware during development.
 - Interface and theme controls: confirmed on 06-10-2026; the centered title was confirmed on 13-10-2026.
+- Q-Link automation: confirmed with MPC automation set to Write; no Q-Link issue remains.
 - Installation/update to the SD card: verified on 13-10-2026, including installed-file checksums and the manager reopening shortcut.
 - Device CPU benchmark: **PASS** on 10-10-2026, with p99 **11.9%** and maximum block **17.4%**.
 - Offline validation: engine/wrapper sanitizer tests, ARM build/linkage checks and all 24 current-package installation/reinstallation/tamper/rollback/uninstallation checks passed.

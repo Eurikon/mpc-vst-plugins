@@ -9,7 +9,7 @@ TEST_BIN := build/tests-$(shell uname -s)-$(shell uname -m)/engine-test
 CPPFLAGS := -Ibuild -I$(MPC_VST)/wrapper
 CXXFLAGS := -std=c++17 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer
 
-.PHONY: test host-test skin arm clean prepare-skin-tools
+.PHONY: test host-test skin arm clean prepare-tools
 build/layout.conf: skin.py layout.template.conf $(wildcard assets/*) skin.css
 	python3 skin.py
 
@@ -42,15 +42,20 @@ $(ART_VENV)/.browser: $(ART_VENV)/.dependencies
 	@PLAYWRIGHT_BROWSERS_PATH="$(abspath $(ART_BROWSER))" $(ART_VENV)/bin/python -c 'from pathlib import Path; from playwright.sync_api import sync_playwright; p = sync_playwright().start(); executable = p.chromium.executable_path; p.stop(); assert Path(executable).is_file()' >/dev/null 2>&1 || PLAYWRIGHT_BROWSERS_PATH="$(abspath $(ART_BROWSER))" $(ART_VENV)/bin/python -m playwright install chromium
 	touch $@
 
-prepare-skin-tools:
-	@if [ "$(abspath $(MPC_VST))" = "$(PINNED_MPC_VST)" ]; then \
-		git -C "$(MPC_VST)" apply --reverse --check "$(CURDIR)/skin-tools.patch"; \
-	else \
+prepare-tools:
+	@set -eu; \
+	if [ "$(abspath $(MPC_VST))" != "$(PINNED_MPC_VST)" ]; then \
 		[ "$$(git -C "$(MPC_VST)" rev-parse HEAD)" = "$(MPC_VST_COMMIT)" ] || { echo "MPC_VST must use upstream commit $(MPC_VST_COMMIT)" >&2; exit 1; }; \
-		git -C "$(MPC_VST)" apply --reverse --check "$(CURDIR)/skin-tools.patch" 2>/dev/null || git -C "$(MPC_VST)" apply "$(CURDIR)/skin-tools.patch"; \
-	fi
+	fi; \
+	for patch in skin-tools.patch release-tools.patch; do \
+		if [ "$(abspath $(MPC_VST))" = "$(PINNED_MPC_VST)" ]; then \
+			git -C "$(MPC_VST)" apply --reverse --check "$(CURDIR)/$$patch"; \
+		else \
+			git -C "$(MPC_VST)" apply --reverse --check "$(CURDIR)/$$patch" 2>/dev/null || git -C "$(MPC_VST)" apply "$(CURDIR)/$$patch"; \
+		fi; \
+	done
 
-skin: prepare-skin-tools $(ART_VENV)/.browser build/layout.conf
+skin: prepare-tools $(ART_VENV)/.browser build/layout.conf
 	PATH=$(abspath $(ART_VENV))/bin:$(PATH) PLAYWRIGHT_BROWSERS_PATH=$(abspath $(ART_BROWSER)) $(ART_VENV)/bin/python $(TOOLS)/gen_vst.py vst.json
 	$(ART_VENV)/bin/python $(TOOLS)/studio.py preview "build/skin/Twisted Cable - VST - MonoSlide/Plugin Skins" -o "build/preview_%d.png"
 

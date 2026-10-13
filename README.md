@@ -1,5 +1,8 @@
 # Twisted Cable - MPC Plugins
 
+[![Releases](https://img.shields.io/badge/Releases-GitHub-blue?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases)
+[![Report an issue](https://img.shields.io/badge/Issues-GitHub-red?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/issues)
+
 Instruments and effects for MPC standalone.<br>
 Each plugin has its own source, license and release package.
 
