@@ -71,6 +71,5 @@ No versions or checksums belong in the registry entry.
 ## Licensing
 
 GPL-3.0-or-later, with MIT Open303 components and public-domain Ooura FFT.<br>
-The skin uses Twisted Cable's TC Link knob graphics; it does not include the TwinSlide Rack interface or sequencer.<br>
 See [LICENSE](LICENSE), `licenses/` and [src/VENDORED.md](src/VENDORED.md) for DSP provenance.<br>
 No firmware or ROMs are included.
