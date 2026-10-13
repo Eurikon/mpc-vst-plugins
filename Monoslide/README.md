@@ -7,8 +7,7 @@ It uses MPC's sequencer and receives MIDI on all channels, with last-note priori
 There are 18 sound parameters across Voice and Expert pages, plus a shared theme selector: Default, Copper, Glacier, Moss, Amethyst and Ember.<br>
 The theme is saved with the instrument; older states select Default.
 
-**Current development version:** 1.0.2, targeting ARMv7 and MPC OS 3.x.<br>
-The final release ZIP smoke test remains pending; source preparation and packaging alone do not establish release sign-off.
+**Current development version:** 1.0.2, targeting ARMv7 and MPC OS 3.x.
 
 ## Build and test
 
@@ -41,22 +40,24 @@ make skin
 Outputs are under ignored `build/` and `dist/`.<br>
 The patch corrects themed dropdown rendering and resource names; it does not change DSP or parameters.
 
-## Install and develop
+## Installation
 
 Install the ZIP with the [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb), following its instructions.<br>
 The package includes install/uninstall scripts and installation requirements.<br>
 Its installer executes as root and restarts the MPC application; SSH is not required.
 
-## Recorded hardware checks
+## Local validation
 
-- MPC Live II, firmware 3.9.1: playback, project save/reload and two playing instances were user-confirmed during development.<br>
-  The corrected UI was confirmed on 06-10-2026.
-- MPC Live II Retro, OS 3.9.1, 10-10-2026: the original device CPU workload returned **PASS**, with worst p99 **11.9%** and maximum block **17.4%**.<br>
-  These percentages measure a single core's 128-frame audio-block budget at 44,100 Hz, rather than the MPC overall CPU meter.<br>
-  The tested library SHA-256 was `6d0ecf239f059286e549e6c3589a2af5a61d141d450452b3c2a37407299fc3e8`.
+**Tested on:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1.
 
-These are historical development checks.<br>
-A complete smoke test of the exact final ZIP remains pending, including installation, all controls/Q-Links, playback, save/reload, two instances, uninstallation and preservation checks.<br>
+- Playback, project save/reload and two playing instances: confirmed on hardware during development.
+- Interface and theme controls: confirmed on 06-10-2026; the centered title was confirmed on 13-10-2026.
+- Installation/update to the SD card: verified on 13-10-2026, including installed-file checksums and the manager reopening shortcut.
+- Device CPU benchmark: **PASS** on 10-10-2026, with p99 **11.9%** and maximum block **17.4%**.
+- Offline validation: engine/wrapper sanitizer tests, ARM build/linkage checks and all 24 current-package installation/reinstallation/tamper/rollback/uninstallation checks passed.
+
+CPU percentages measure a single core's 128-frame audio-block budget at 44,100 Hz, rather than the MPC overall CPU meter.<br>
+The current package includes the measured CPU result and retains the tested library SHA-256 `6d0ecf239f059286e549e6c3589a2af5a61d141d450452b3c2a37407299fc3e8`.<br>
 OS 2.x, Gen2 and other device/firmware combinations remain unverified.
 
 ## Compatibility and catalog
