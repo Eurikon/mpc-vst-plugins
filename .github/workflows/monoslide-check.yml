@@ -19,7 +19,7 @@ jobs:
           ref: fc1ea20ff83779d3f47fb43177f5284f59e57a99
           path: mpc-vst-plugins
       - name: Sanitizer and catalog registry checks
-        working-directory: port/Monoslide
+        working-directory: port/Instruments/Monoslide
         env:
           MPC_VST: ${{ github.workspace }}/mpc-vst-plugins
         run: |
