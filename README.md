@@ -1,7 +1,7 @@
 # Twisted Cable MPC Plugins
 
-Instruments and effects for MPC standalone. Each plugin has its own source,
-license and release package; installable ZIPs belong in GitHub Releases.
+Instruments and effects for MPC standalone.<br>
+Each plugin has its own source, license and release package; installable ZIPs belong in GitHub Releases.
 
 |  | Plugin | Type |
 | --- | --- | --- |
@@ -9,22 +9,19 @@ license and release package; installable ZIPs belong in GitHub Releases.
 
 ## Build from source
 
-Follow each plugin's README for its commands and pinned external dependencies.
-No Docker images, Akai firmware or local development toolchain are bundled here.
-<br>Build workflows use the external [sd88me MPC VST build tools](https://github.com/sd88me/mpc-vst-plugins).
-That project established the standalone plugin build, package and community
-catalog workflow used by this collection.
+Follow each plugin's README for its commands and pinned external dependencies.<br>
+No Docker images, Akai firmware or local development toolchain are bundled here.<br>
+Build workflows use the external [sd88me MPC VST build tools](https://github.com/sd88me/mpc-vst-plugins).<br>
+That project established the standalone plugin build, package and community catalog workflow used by this collection.
 
 ## Releases and installation
 
-Each plugin is packaged and submitted to the community catalog separately.
-Release assets use plugin-specific names; source updates do not publish a new
-installer automatically. The [USB Plugin Manager](https://github.com/Eurikon/plugin-manager-usb)
-can install suitable released packages on the MPC.
+Each plugin is packaged and submitted to the community catalog separately.<br>
+Release assets use plugin-specific names; source updates do not publish a new installer automatically.<br>
+The [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb) can install suitable released packages on the MPC.
 
 ## Licensing
 
-Licenses apply per plugin, including its third-party notices. There is no single
-license covering the entire collection. Open MPC releases from this project
-are open source and free of charge; paid releases are outside this project's
-publication policy unless AKAI establishes an authorized commercial platform.
+Licenses apply per plugin, including its third-party notices.<br>
+There is no single license covering the entire collection.<br>
+Open MPC releases from this project are open source and free of charge; paid releases are outside this project's publication policy unless AKAI establishes an authorized commercial platform.
