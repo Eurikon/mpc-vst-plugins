@@ -7,10 +7,6 @@ license and release package; installable ZIPs belong in GitHub Releases.
 | --- | --- | --- | --- |
 | MonoSlide | Monophonic acid bass instrument | GPL-3.0-or-later | [Build and usage](Monoslide/README.md) |
 
-MonoSlide targets MPC OS 3.x. Development checks used MPC Live II Retro / OS
-3.9.1. Its final release-package hardware smoke test remains pending; see the
-plugin README for the recorded checks and their scope.
-
 ## Build from source
 
 Follow each plugin's README for its commands and pinned external dependencies.
