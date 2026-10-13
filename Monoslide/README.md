@@ -58,7 +58,7 @@ Its installer executes as root and restarts the MPC application; SSH is not requ
 - Playback, project save/reload and two playing instances: confirmed on hardware during development.
 - Interface and theme controls: confirmed on 06-10-2026; the centered title was confirmed on 13-10-2026.
 - Q-Link automation: confirmed with MPC automation set to Write; no Q-Link issue remains.
-- Installation/update to the SD card: verified on 13-10-2026, including installed-file checksums and the manager reopening shortcut.
+- Installation, managed removal and reinstallation on the SD card: verified on 13-10-2026, including installed-file checksums, preservation of unrelated settings/plugin entries and the manager reopening shortcut.
 - Device CPU benchmark: **PASS** on 10-10-2026, with p99 **11.9%** and maximum block **17.4%**.
 - Offline validation: engine/wrapper sanitizer tests, ARM build/linkage checks and all 24 current-package installation/reinstallation/tamper/rollback/uninstallation checks passed.
 
