@@ -1,0 +1,25 @@
+{
+  "name": "MonoSlide",
+  "vendor": "Twisted Cable",
+  "uid": "TcMs",
+  "version": 1002,
+  "so": "monoslide.so",
+  "params": "params.json",
+  "defines": {
+    "SAMPLE_ACCURATE": 1
+  },
+  "build": {
+    "root": ".",
+    "sources": [
+      "src/engine.cpp"
+    ],
+    "cflags": [
+      "-std=c++17"
+    ],
+    "libs": [
+      "-lm"
+    ]
+  },
+  "layout": "build/layout.conf",
+  "art": "html"
+}

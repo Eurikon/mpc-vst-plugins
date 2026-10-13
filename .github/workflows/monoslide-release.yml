@@ -1,0 +1,29 @@
+name: MonoSlide draft release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version X.Y.Z
+        required: true
+        type: string
+      dry_run:
+        description: Only upload workflow artifacts
+        default: true
+        type: boolean
+jobs:
+  vst:
+    uses: sd88me/mpc-vst-plugins/.github/workflows/vst-release.yml@fc1ea20ff83779d3f47fb43177f5284f59e57a99
+    permissions:
+      contents: write
+    with:
+      tag: monoslide-v${{ inputs.version }}
+      version: ${{ inputs.version }}
+      tools_ref: fc1ea20ff83779d3f47fb43177f5284f59e57a99
+      vst_dir: Monoslide
+      build: ./Monoslide/build.sh
+      host_test: ./Monoslide/test.sh
+      plugin_id: monoslide
+      license: GPL-3.0-or-later
+      extra: Monoslide/LICENSE:LICENSE Monoslide/licenses:licenses
+      about: "Monophonic acid bass voice. See Monoslide/README.md for recorded hardware checks and the final package smoke-test requirements."
+      dry_run: ${{ inputs.dry_run }}

@@ -1,0 +1,153 @@
+[
+  {
+    "key": "cutoff",
+    "name": "Cutoff",
+    "min": 0,
+    "max": 1,
+    "default": 0.5
+  },
+  {
+    "key": "env_mod",
+    "name": "Env Mod",
+    "min": 0,
+    "max": 1,
+    "default": 0.5
+  },
+  {
+    "key": "decay",
+    "name": "Decay",
+    "min": 0,
+    "max": 1,
+    "default": 0.5
+  },
+  {
+    "key": "drive",
+    "name": "Drive",
+    "min": 0,
+    "max": 1,
+    "default": 0.75
+  },
+  {
+    "key": "accent",
+    "name": "Accent",
+    "min": 0,
+    "max": 1,
+    "default": 0.5
+  },
+  {
+    "key": "resonance",
+    "name": "Resonance",
+    "min": 0,
+    "max": 1,
+    "default": 0
+  },
+  {
+    "key": "fine",
+    "name": "Fine Tune",
+    "min": -1,
+    "max": 1,
+    "default": 0
+  },
+  {
+    "key": "level",
+    "name": "Level",
+    "min": 0,
+    "max": 1,
+    "default": 0.75
+  },
+  {
+    "key": "waveform",
+    "name": "Waveform",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "options": [
+      "Saw",
+      "Square"
+    ]
+  },
+  {
+    "key": "slide_time",
+    "name": "Slide Time",
+    "min": 0,
+    "max": 1,
+    "default": 0.75
+  },
+  {
+    "key": "vcf_range",
+    "name": "VCF Range",
+    "min": -1,
+    "max": 0,
+    "default": 0
+  },
+  {
+    "key": "decay_range",
+    "name": "Decay Range",
+    "min": -1,
+    "max": 1,
+    "default": 0
+  },
+  {
+    "key": "sustain",
+    "name": "Sustain",
+    "min": 0,
+    "max": 1,
+    "default": 0
+  },
+  {
+    "key": "release",
+    "name": "Release",
+    "min": 0,
+    "max": 1,
+    "default": 0
+  },
+  {
+    "key": "blend",
+    "name": "Wave Blend",
+    "min": 0,
+    "max": 1,
+    "default": 0
+  },
+  {
+    "key": "bass_comp",
+    "name": "Bass Compensation",
+    "min": 0,
+    "max": 1,
+    "default": 1
+  },
+  {
+    "key": "legato",
+    "name": "Legato Slide",
+    "min": 0,
+    "max": 1,
+    "default": 1,
+    "options": [
+      "Off",
+      "On"
+    ]
+  },
+  {
+    "key": "accent_threshold",
+    "name": "Accent Velocity",
+    "min": 1,
+    "max": 127,
+    "default": 100,
+    "display": "int",
+    "qlink_ticks": 2
+  },
+  {
+    "key": "theme",
+    "name": "Theme",
+    "min": 0,
+    "max": 5,
+    "default": 0,
+    "options": [
+      "Default",
+      "Copper",
+      "Glacier",
+      "Moss",
+      "Amethyst",
+      "Ember"
+    ]
+  }
+]

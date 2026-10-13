@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="628" viewBox="0 0 1280 628">
+<defs>
+<linearGradient id="panel" x1="0%" y1="0%" x2="0%" y2="100%"><stop stop-color="#2e2e2e"/><stop offset=".12" stop-color="#282828"/><stop offset=".33" stop-color="#222222"/><stop offset="1" stop-color="#1a1a1a"/></linearGradient>
+<linearGradient id="inner" x1="0%" y1="0%" x2="0%" y2="100%"><stop stop-color="#1c1c1c"/><stop offset="1" stop-color="#141414"/></linearGradient>
+<linearGradient id="controls" x1="0%" y1="0%" x2="0%" y2="100%"><stop stop-color="#282828"/><stop offset="1" stop-color="#1c1c1c"/></linearGradient>
+<linearGradient id="bevel" x1="0%" y1="0%" x2="0%" y2="100%"><stop stop-color="#46433a"/><stop offset="1" stop-color="#161614"/></linearGradient>
+<linearGradient id="value-border" x1="0%" y1="0%" x2="0%" y2="100%"><stop stop-color="#8a6020" stop-opacity=".702"/><stop offset="1" stop-color="#e6b060" stop-opacity=".702"/></linearGradient>
+</defs>
+<rect x="1" y="1" width="1278" height="626" fill="url(#panel)" stroke="#080909" stroke-width="2"/>
+<rect x="8" y="8" width="1264" height="76" fill="#242424"/>
+<rect x="16" y="92" width="1248" height="493" rx="12" fill="url(#inner)" stroke="#3a3a3a" stroke-width="2"/>
+<rect x="30" y="106" width="1220" height="218" rx="8" fill="url(#controls)" stroke="#37332d" stroke-width="2"/>
+<rect x="33" y="109" width="1214" height="212" rx="6" fill="none" stroke="url(#bevel)" stroke-width="1.5"/>
+<rect x="30" y="338" width="1220" height="234" rx="8" fill="url(#controls)" stroke="#37332d" stroke-width="2"/>
+<rect x="33" y="341" width="1214" height="228" rx="6" fill="none" stroke="url(#bevel)" stroke-width="1.5"/>
+<rect x="418" y="18" width="444" height="58" rx="29" fill="#242424" stroke="#ffc050" stroke-width="3"/>
+<path d="M646 20H833A27 27 0 0 1 833 74H614Z" fill="#ffc050"/>
+<text x="527" y="59" text-anchor="middle" style="font-family:'Titillium Web';font-weight:700;font-size:44px;letter-spacing:1px;fill:#ffc050">MONO</text>
+<text x="747" y="59" text-anchor="middle" style="font-family:'Titillium Web';font-weight:700;font-size:44px;letter-spacing:1px;fill:#161914">SLIDE</text>
+<rect x="965" y="27" width="250" height="42" rx="6" fill="#1a1a1a" stroke="#635037" stroke-width="1.5"/>
+<text x="949" y="54" text-anchor="end" style="font-family:'Titillium Web';font-weight:600;font-size:18px;fill:#99a489">THEME</text>
+<g style="font-family:'Titillium Web';font-weight:700;font-size:28px;fill:#2d2d2d;stroke:#ebebe4;stroke-width:1.8;paint-order:stroke fill;text-anchor:middle;letter-spacing:1px"><text x="640" y="612"><tspan stroke="#ffc050">T</tspan>WISTED ∞ <tspan stroke="#ffc050">C</tspan>ABLE</text></g>
+</svg>

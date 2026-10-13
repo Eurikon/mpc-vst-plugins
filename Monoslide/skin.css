@@ -1,0 +1,4 @@
+:root { --label-size: 24px; --seg-size: 22px; --sheen: 0; }
+.text { font-size: 24px; letter-spacing: .025em; font-weight: 600; }
+.seg-tx { fill: var(--ink); font-size: 22px; font-weight: 700; letter-spacing: .025em; }
+.seg-sheen { display: none; }

@@ -1,0 +1,12 @@
+{
+  "id": "monoslide",
+  "name": "MonoSlide",
+  "author": "Eurikon",
+  "repo": "Eurikon/mpc-vst-plugins",
+  "asset_pattern": "MonoSlide-*-mpc-armv7.zip",
+  "kind": "instrument",
+  "license": "GPL-3.0-or-later",
+  "style": "synth",
+  "tags": ["303", "acid", "bass", "monophonic"],
+  "summary": "Monophonic acid bass voice with overlapping-note slide, velocity accents and an MPC touchscreen skin."
+}
