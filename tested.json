@@ -5,5 +5,12 @@
     "device": "MPC Live II Retro",
     "firmware": "3.9.1",
     "date": "2026-10-13"
+  },
+  {
+    "id": "monoslide",
+    "version": "1.0.3",
+    "device": "MPC Live II Retro",
+    "firmware": "3.9.1",
+    "date": "2026-10-14"
   }
 ]

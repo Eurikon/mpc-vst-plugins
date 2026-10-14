@@ -666,6 +666,9 @@ struct OnePoleFilter303 {
 	double b0 = 1.0, b1 = 0.0, a1 = 0.0;
 	double cutoffFreq = 150.0;
 	double sampleRate = 44100.0;
+	bool coefficientsValid = false;
+	double cachedCutoff = 0.0, cachedSampleRate = 0.0;
+	double cachedB0 = 0.0, cachedB1 = 0.0, cachedA1 = 0.0;
 
 	void setSampleRate(double newSampleRate) {
 		if (newSampleRate > 0.0) sampleRate = newSampleRate;
@@ -681,10 +684,18 @@ struct OnePoleFilter303 {
 	}
 
 	void calcCoeffs() {
+		if (coefficientsValid && cutoffFreq == cachedCutoff && sampleRate == cachedSampleRate
+		    && b0 == cachedB0 && b1 == cachedB1 && a1 == cachedA1) return;
 		double x = std::exp(-2.0 * M_PI * cutoffFreq / sampleRate);
 		b0 =  0.5 * (1.0 + x);
 		b1 = -0.5 * (1.0 + x);
 		a1 = x;
+		cachedCutoff = cutoffFreq;
+		cachedSampleRate = sampleRate;
+		cachedB0 = b0;
+		cachedB1 = b1;
+		cachedA1 = a1;
+		coefficientsValid = true;
 	}
 
 	double getSample(double in) {
@@ -712,6 +723,12 @@ struct TeeBeeFilter303 {
 	double resonanceSkewed = 0.0;
 	double sampleRate = 44100.0;
 	double twoPiOverSampleRate = 2.0 * M_PI / 44100.0;
+	bool resonanceSkewValid = false;
+	double cachedResonanceRaw = 0.0, cachedResonanceSkew = 0.0;
+	bool coefficientsValid = false;
+	float cachedCutoff = 0.0f;
+	double cachedResonanceSkewed = 0.0, cachedTwoPiOverSampleRate = 0.0;
+	double cachedB0 = 0.0, cachedK = 0.0, cachedG = 0.0;
 
 	OnePoleFilter303 feedbackHighpass;
 
@@ -737,11 +754,21 @@ struct TeeBeeFilter303 {
 
 	void setResonance(float res) {
 		resonanceRaw = clamp((float)res / 10.f, 0.f, 1.f);
-		resonanceSkewed = (1.0 - std::exp(-3.0 * resonanceRaw)) / (1.0 - std::exp(-3.0));
+		if (!resonanceSkewValid || resonanceRaw != cachedResonanceRaw
+		    || resonanceSkewed != cachedResonanceSkew) {
+			resonanceSkewed = (1.0 - std::exp(-3.0 * resonanceRaw)) / (1.0 - std::exp(-3.0));
+			cachedResonanceRaw = resonanceRaw;
+			cachedResonanceSkew = resonanceSkewed;
+			resonanceSkewValid = true;
+		}
 		calculateCoefficients();
 	}
 
 	void calculateCoefficients() {
+		if (coefficientsValid && cutoff == cachedCutoff
+		    && resonanceSkewed == cachedResonanceSkewed
+		    && twoPiOverSampleRate == cachedTwoPiOverSampleRate
+		    && b0 == cachedB0 && k == cachedK && g == cachedG) return;
 		double wc = twoPiOverSampleRate * (double)cutoff;
 		double r = resonanceSkewed;
 
@@ -755,6 +782,13 @@ struct TeeBeeFilter303 {
 		g = (g - 1.0) * r + 1.0;
 		g = g * (1.0 + r);
 		k = k * r;
+		cachedCutoff = cutoff;
+		cachedResonanceSkewed = resonanceSkewed;
+		cachedTwoPiOverSampleRate = twoPiOverSampleRate;
+		cachedB0 = b0;
+		cachedK = k;
+		cachedG = g;
+		coefficientsValid = true;
 	}
 
 	inline double shape(double x) {

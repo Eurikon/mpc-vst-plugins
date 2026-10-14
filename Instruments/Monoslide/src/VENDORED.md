@@ -9,6 +9,7 @@ The source is vendored here; builds never fetch DSP or Rack assets.
 - Replaced Rack random noise with per-voice xorshift noise; instances share no RNG state.
 - Removed unused AnalogEnvelope, oscillator helper methods, envelope helper methods, filter fields/constants and unused process timing argument/calculations.
 - Extended voice reset to clear pitch slew, pre/post high-pass filters, accent decay, oscillator phase and envelope/gate flags.
+- Cached exact DSP coefficients; they are recalculated when their inputs change, while audio processing, state updates and tails continue.
 - Removed decorative and paraphrasing comments; retained attribution.<br>
   The Open303-derived synthesis path and fourfold oversampling remain.
 

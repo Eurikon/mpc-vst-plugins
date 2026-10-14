@@ -2,7 +2,7 @@
   "name": "MonoSlide",
   "vendor": "Twisted Cable",
   "uid": "TcMs",
-  "version": 1002,
+  "version": 1003,
   "so": "monoslide.so",
   "params": "params.json",
   "defines": {

@@ -11,7 +11,7 @@ It uses MPC's sequencer and receives MIDI on all channels, with last-note priori
 There are 18 sound parameters across Voice and Expert pages, plus a shared theme selector: Default, Copper, Glacier, Moss, Amethyst and Ember.<br>
 The theme is saved with the instrument; older states select Default.
 
-**Current release:** 1.0.2, targeting ARMv7 and MPC OS 3.x.
+**Current release:** 1.0.3, targeting ARMv7 and MPC OS 3.x.
 
 ## Build and test
 
@@ -30,7 +30,7 @@ cd Instruments/Monoslide
 ./test.sh
 make skin
 ./build.sh
-./package.sh 1.0.2
+./package.sh 1.0.3
 ```
 
 - `build.sh` applies or verifies `skin-tools.patch` and `release-tools.patch`, generates the skin and parameter table, then builds the ARM plugin using the upstream Docker workflow.
@@ -38,7 +38,7 @@ make skin
 - `make skin` creates local page previews with an isolated Python/Playwright environment under ignored `build/art-venv/` and `build/browser/`, using [requirements-art.txt](requirements-art.txt).<br>
   Existing development caches are reused when available.<br>
   Override `ART_PYTHON`, `ART_VENV` or `ART_BROWSER` as needed.
-- `package.sh` creates `dist/MonoSlide-1.0.2-mpc-armv7.zip` and runs the upstream catalog validator.<br>
+- `package.sh` creates `dist/MonoSlide-1.0.3-mpc-armv7.zip` and runs the upstream catalog validator.<br>
   CPU metadata is included only when a valid `bench.txt` exists.<br>
   An optional second argument selects another output directory.
 
@@ -58,12 +58,14 @@ Its installer executes as root and restarts the MPC application; SSH is not requ
 - Playback, project save/reload and two playing instances: confirmed on hardware during development.
 - Interface and theme controls: confirmed on 06-10-2026; the centered title was confirmed on 13-10-2026.
 - Q-Link automation: confirmed with MPC automation set to Write; no Q-Link issue remains.
-- Installation, managed removal and reinstallation on the SD card: verified on 13-10-2026, including installed-file checksums, preservation of unrelated settings/plugin entries and the manager reopening shortcut.
-- Device CPU benchmark: **PASS** on 10-10-2026, with p99 **11.9%** and maximum block **17.4%**.
-- Offline validation: engine/wrapper sanitizer tests, ARM build/linkage checks and all 24 current-package installation/reinstallation/tamper/rollback/uninstallation checks passed.
+- Installation, managed removal and reinstallation on the SD card: verified on 14-10-2026, including the installed payload, USB manifest and manager reopening shortcut.
+- Idle CPU processing: reduced from **8.7%** to **7.5%** of one core on 14-10-2026, about **14% less CPU**.
+- Device CPU benchmark: **PASS** on 14-10-2026, with p99 **10.5%** and maximum block **15.9%**.
+- Regression validation: host, sanitized and native ARM output checks matched exactly across **27 cases and 2,772,485 frames** before and after optimization.
+- Final release ZIP: all **24** offline installation/reinstallation/tamper/rollback/uninstallation checks passed.
 
 CPU percentages measure a single core's 128-frame audio-block budget at 44,100 Hz, rather than the MPC overall CPU meter.<br>
-The current package includes the measured CPU result and retains the tested library SHA-256 `6d0ecf239f059286e549e6c3589a2af5a61d141d450452b3c2a37407299fc3e8`.<br>
+The current package includes the measured CPU result and tested library SHA-256 `c264f95582bf3ebac5a0a60e8ed093ae4b274f57fd02ebee838f6695947188ad`.<br>
 OS 2.x, Gen2 and other device/firmware combinations remain unverified.
 
 ## Licensing
