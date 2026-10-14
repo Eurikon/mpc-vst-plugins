@@ -2,7 +2,7 @@
 
 [![Build checks](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/monoslide-check.yml/badge.svg?branch=main)](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/monoslide-check.yml)
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Download 1.0.2](https://img.shields.io/badge/Download-1.0.2-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/monoslide-v1.0.2/MonoSlide-1.0.2-mpc-armv7.zip)
+[![Download 1.0.3](https://img.shields.io/badge/Download-1.0.3-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/monoslide-v1.0.3/MonoSlide-1.0.3-mpc-armv7.zip)
 
 ![MonoSlide Voice page](../../media/monoslide.png)
 
