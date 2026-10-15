@@ -25,7 +25,7 @@ That project established the standalone plugin build, package and community cata
 
 Each plugin is packaged and submitted to the community catalog separately.<br>
 Release assets use plugin-specific names; source updates do not publish a new installer automatically.<br>
-The [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb) can install suitable released packages on the MPC.
+The [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc) can install suitable released packages on the MPC.
 
 ## Licensing
 

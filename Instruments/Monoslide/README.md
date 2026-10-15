@@ -47,7 +47,7 @@ The patches correct themed dropdown rendering, resource names and generated inst
 
 ## Installation
 
-Install the ZIP with the [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb), following its instructions.<br>
+Install the ZIP with the [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc), following its instructions.<br>
 The package includes install/uninstall scripts and installation requirements.<br>
 Its installer executes as root and restarts the MPC application; SSH is not required.
 
