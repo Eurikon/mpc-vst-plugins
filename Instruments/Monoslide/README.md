@@ -11,7 +11,7 @@ It uses MPC's sequencer and receives MIDI on all channels, with last-note priori
 There are 18 sound parameters across Voice and Expert pages, plus a shared theme selector: Default, Copper, Glacier, Moss, Amethyst and Ember.<br>
 The theme is saved with the instrument; older states select Default.
 
-**Version:** 1.0.3, targeting ARMv7 and MPC OS 3.x.
+**Current release:** 1.0.3, targeting ARMv7 and MPC OS 3.x.
 
 ## Build and test
 
