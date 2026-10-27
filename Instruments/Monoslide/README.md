@@ -53,7 +53,7 @@ Its installer executes as root and restarts the MPC application; SSH is not requ
 
 ## Local validation
 
-**Tested on:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1.
+**Tested on:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1 and 3.10.
 
 - Playback, project save/reload and two playing instances: confirmed on hardware during development.
 - Interface and theme controls: confirmed on 06-10-2026; the centered title was confirmed on 13-10-2026.
@@ -66,6 +66,7 @@ Its installer executes as root and restarts the MPC application; SSH is not requ
 
 CPU percentages measure a single core's 128-frame audio-block budget at 44,100 Hz, rather than the MPC overall CPU meter.<br>
 The current package includes the measured CPU result and tested library SHA-256 `c264f95582bf3ebac5a0a60e8ed093ae4b274f57fd02ebee838f6695947188ad`.<br>
+Playback was also checked on OS 3.10; the CPU figures above were measured on OS 3.9.1.<br>
 OS 2.x, Gen2 and other device/firmware combinations remain unverified.
 
 ## Licensing
