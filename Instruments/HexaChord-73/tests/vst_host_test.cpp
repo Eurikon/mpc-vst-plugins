@@ -9,24 +9,25 @@
 #include "params.h"
 #include "hexachord_params.h"
 
-struct Effect;
-using Host = intptr_t (*)(Effect*, int32_t, int32_t, intptr_t, void*, float);
-struct Effect {
+struct AEffect;
+using Host = intptr_t (*)(AEffect*, int32_t, int32_t, intptr_t, void*, float);
+struct AEffect {
     int32_t magic;
-    intptr_t (*dispatch)(Effect*, int32_t, int32_t, intptr_t, void*, float);
-    void (*process)(Effect*, float**, float**, int32_t);
-    void (*set)(Effect*, int32_t, float);
-    float (*get)(Effect*, int32_t);
-    int32_t programs, parameters, inputs, outputs, flags;
-    intptr_t reserved1, reserved2;
-    int32_t latency, realQualities, offQualities;
+    intptr_t (*dispatcher)(AEffect*, int32_t, int32_t, intptr_t, void*, float);
+    void (*process)(AEffect*, float**, float**, int32_t);
+    void (*setParameter)(AEffect*, int32_t, float);
+    float (*getParameter)(AEffect*, int32_t);
+    int32_t numPrograms, numParams, numInputs, numOutputs, flags;
+    intptr_t resvd1, resvd2;
+    int32_t initialDelay, realQualities, offQualities;
     float ioRatio;
     void *object, *user;
-    int32_t uid, version;
-    void (*replace)(Effect*, float**, float**, int32_t);
-    void (*doubleReplace)(Effect*, double**, double**, int32_t);
+    int32_t uniqueID, version;
+    void (*processReplacing)(AEffect*, float**, float**, int32_t);
+    void (*processDoubleReplacing)(AEffect*, double**, double**, int32_t);
     char future[56];
 };
+using Effect = AEffect;
 struct MidiEvent {
     int32_t type = 1, byteSize = sizeof(MidiEvent), frame = 0, flags = 0, length = 0, offset = 0;
     uint8_t data[4]{};
@@ -60,13 +61,13 @@ void midi(Effect* e, int status, int note, int velocity, int frame) {
     event.data[1] = uint8_t(note);
     event.data[2] = uint8_t(velocity);
     Events events{1, 0, {&event, nullptr}};
-    require(e->dispatch(e, 25, 0, 0, &events, 0) == 1, "VST MIDI dispatch");
+    require(e->dispatcher(e, 25, 0, 0, &events, 0) == 1, "VST MIDI dispatch");
 }
 double render(Effect* e, int frames, int silentPrefix = 0, bool accumulated = false) {
     std::vector<float> left(frames, accumulated ? .25f : 0.f), right(left);
     float* channels[] = {left.data(), right.data()};
     if (accumulated) e->process(e, nullptr, channels, frames);
-    else e->replace(e, nullptr, channels, frames);
+    else e->processReplacing(e, nullptr, channels, frames);
     double energy = 0;
     for (int i = 0; i < frames; ++i) {
         require(std::isfinite(left[i]) && std::isfinite(right[i]), "Non-finite VST audio");
@@ -77,12 +78,12 @@ double render(Effect* e, int frames, int silentPrefix = 0, bool accumulated = fa
 }
 std::string parameterText(Effect* effect, int opcode, int index) {
     char buffer[64]{};
-    require(effect->dispatch(effect, opcode, index, 0, buffer, 0) == 1, "VST parameter text dispatch");
+    require(effect->dispatcher(effect, opcode, index, 0, buffer, 0) == 1, "VST parameter text dispatch");
     return buffer;
 }
 std::string chunk(Effect* effect) {
     void* pointer = nullptr;
-    const auto bytes = effect->dispatch(effect, 23, 0, 0, &pointer, 0);
+    const auto bytes = effect->dispatcher(effect, 23, 0, 0, &pointer, 0);
     require(pointer && bytes > 1 && bytes <= 8192, "Bounded display-test VST chunk");
     return {static_cast<const char*>(pointer), size_t(bytes)};
 }
@@ -99,19 +100,19 @@ void displays(Effect* effect) {
     const Expected expected[] = {{6, "20", "20000", .8f, "5024"}, {8, "10", "4000", .5f, "1008"},
                                   {9, "50", "5000", .25f, "359"}, {11, "50", "6000", .37f, "865"}};
     for (const auto& item : expected) {
-        effect->set(effect, item.index, 0);
+        effect->setParameter(effect, item.index, 0);
         require(parameterText(effect, 7, item.index) == item.minimum, "VST physical display lower bound");
-        effect->set(effect, item.index, 1);
+        effect->setParameter(effect, item.index, 1);
         require(parameterText(effect, 7, item.index) == item.maximum, "VST physical display upper bound");
-        effect->set(effect, item.index, item.fraction);
+        effect->setParameter(effect, item.index, item.fraction);
         const auto exact = chunk(effect);
-        const auto numeric = effect->get(effect, item.index);
+        const auto numeric = effect->getParameter(effect, item.index);
         require(parameterText(effect, 7, item.index) == item.formatted, "VST fractional physical display rounding");
-        require(effect->get(effect, item.index) == numeric && std::fabs(numeric - item.fraction) < .000001f,
+        require(effect->getParameter(effect, item.index) == numeric && std::fabs(numeric - item.fraction) < .000001f,
                 "VST display changed normalized parameter");
         require(chunk(effect) == exact, "VST display changed exact saved state");
     }
-    require(effect->dispatch(effect, 24, 0, original.size(), const_cast<char*>(original.data()), 0) == 1,
+    require(effect->dispatcher(effect, 24, 0, original.size(), const_cast<char*>(original.data()), 0) == 1,
             "Restore parameters after display checks");
     require(chunk(effect) == original, "Display checks altered restored VST state");
 }
@@ -136,11 +137,11 @@ void enumControls(Effect* a, Effect* b) {
     };
     auto raw = [&](Effect* effect, int i, float expected) {
         for (int read = 0; read < 4; ++read)
-            require(std::fabs(effect->get(effect, i) - expected) < .000001f,
+            require(std::fabs(effect->getParameter(effect, i) - expected) < .000001f,
                     "Continuous enum host position changed on read");
     };
     auto send = [&](Effect* effect, int i, float value) {
-        effect->set(effect, i, value);
+        effect->setParameter(effect, i, value);
         const float clamped = std::fmax(0.f, std::fmin(1.f, value));
         raw(effect, i, clamped);
         at(effect, i, int(std::lround(double(clamped) * spans[i])));
@@ -149,7 +150,7 @@ void enumControls(Effect* a, Effect* b) {
         send(effect, i, float(option) / spans[i]);
     };
     auto restore = [&](Effect* effect, const std::string& saved) {
-        require(effect->dispatch(effect, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
+        require(effect->dispatcher(effect, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
                 "Enum control state restore rejected");
         require(chunk(effect) == saved, "Enum control state restore changed canonical values");
     };
@@ -175,7 +176,7 @@ void enumControls(Effect* a, Effect* b) {
         for (float rate : rates) {
             for (int direction : {-1, 1}) {
                 pick(a, i, 1);
-                const float baseline = a->get(a, i);
+                const float baseline = a->getParameter(a, i);
                 int previous = 1;
                 for (int event = 1; event <= 160; ++event) {
                     send(a, i, baseline + direction * event * rate);
@@ -189,7 +190,7 @@ void enumControls(Effect* a, Effect* b) {
                 pick(a, i, 1);
                 previous = 1;
                 for (int event = 0; event < 160; ++event) {
-                    send(a, i, a->get(a, i) + direction * rate);
+                    send(a, i, a->getParameter(a, i) + direction * rate);
                     int current = selected(a, i);
                     require(direction > 0 ? current >= previous : current <= previous,
                             "Readback-relative host stream reversed enum selection");
@@ -199,7 +200,7 @@ void enumControls(Effect* a, Effect* b) {
             }
         }
         pick(a, i, 1);
-        float running = a->get(a, i);
+        float running = a->getParameter(a, i);
         const int bursts[] = {1, 2, 3, 10, 1, 4};
         for (int direction : {1, -1}) {
             int previous = selected(a, i);
@@ -210,7 +211,7 @@ void enumControls(Effect* a, Effect* b) {
                 require(direction > 0 ? current >= previous : current <= previous,
                         "Accelerated cached host stream reversed enum selection");
                 previous = current;
-                if (event % 7 == 0) running = a->get(a, i);
+                if (event % 7 == 0) running = a->getParameter(a, i);
             }
         }
         for (int option = 1; option < spans[i]; ++option) {
@@ -235,19 +236,19 @@ void enumControls(Effect* a, Effect* b) {
         send(a, i, fractional);
         restore(a, canonical);
         raw(a, i, 1.f / spans[i]);
-        send(a, i, a->get(a, i) - rates[0]);
+        send(a, i, a->getParameter(a, i) - rates[0]);
         at(a, i, 1);
 
         send(a, i, fractional);
         const auto preserved = chunk(a);
         for (intptr_t size : {intptr_t(0), intptr_t(8193)}) {
-            require(a->dispatch(a, 24, 0, size, const_cast<char*>(canonical.data()), 0) == 0,
+            require(a->dispatcher(a, 24, 0, size, const_cast<char*>(canonical.data()), 0) == 0,
                     "Malformed-size enum state accepted");
             raw(a, i, fractional);
             require(chunk(a) == preserved, "Rejected enum state mutated canonical values");
         }
         for (float invalid : {NAN, INFINITY, -INFINITY}) {
-            a->set(a, i, invalid);
+            a->setParameter(a, i, invalid);
             raw(a, i, fractional);
             require(chunk(a) == preserved, "Non-finite enum input mutated state");
         }
@@ -296,21 +297,21 @@ void engineControls(Effect* a, Effect* b) {
         require(parameterText(a, 7, index) == defaults[i], "Engine VST default display changed");
         require(parameterText(a, 6, index) == (i % 4 == 3 ? "" : "%"), "Engine VST unit changed");
         for (float selected : {0.f, .25f, .75f, 1.f}) {
-            a->set(a, index, selected);
-            require(std::fabs(a->get(a, index) - selected) < .000001f, "Engine host control jumped");
+            a->setParameter(a, index, selected);
+            require(std::fabs(a->getParameter(a, index) - selected) < .000001f, "Engine host control jumped");
             require(chunk(b) == originalB, "Engine host control leaked between instances");
         }
-        a->set(a, index, i % 4 == 3 ? .5f : .3f);
+        a->setParameter(a, index, i % 4 == 3 ? .5f : .3f);
     }
     const auto saved = chunk(a);
-    require(b->dispatch(b, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
+    require(b->dispatcher(b, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
             "New engine VST chunk rejected");
     require(chunk(b) == saved, "Engine values did not survive VST reload");
     for (int i = 18; i < 34; ++i)
-        require(std::fabs(a->get(a, i) - b->get(b, i)) < .000001f, "Restored engine control mismatch");
+        require(std::fabs(a->getParameter(a, i) - b->getParameter(b, i)) < .000001f, "Restored engine control mismatch");
     std::string legacy;
     for (int count : {16, 20}) {
-        require(b->dispatch(b, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
+        require(b->dispatcher(b, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
                 "Migration baseline restore rejected");
         legacy = count == 16 ? "HX73 1" : "HX73 2";
         size_t position = 7;
@@ -321,67 +322,67 @@ void engineControls(Effect* a, Effect* b) {
             position = end + 1;
         }
         legacy.push_back(0);
-        require(b->dispatch(b, 24, 0, legacy.size(), legacy.data(), 0) == 1,
+        require(b->dispatcher(b, 24, 0, legacy.size(), legacy.data(), 0) == 1,
                 "Legacy VST chunk rejected");
         const auto restoredLegacy = chunk(b);
-        require(b->dispatch(b, 2, 0, 0, nullptr, 0) == 1 && chunk(b) == restoredLegacy,
+        require(b->dispatcher(b, 2, 0, 0, nullptr, 0) == 1 && chunk(b) == restoredLegacy,
                 "Post-load program selection erased a migrated legacy state");
         for (int i = 16; i < count; ++i)
-            require(std::fabs(a->get(a, i + 2) - b->get(b, i + 2)) < .000001f,
+            require(std::fabs(a->getParameter(a, i + 2) - b->getParameter(b, i + 2)) < .000001f,
                     "Legacy VST chunk changed an existing engine control");
         for (int i = count - 16; i < 16; ++i)
             require(parameterText(b, 7, i + 18) == defaults[i], "Legacy VST chunk did not migrate engine defaults");
     }
     const auto migrated = chunk(b);
     for (intptr_t size : {intptr_t(saved.size() - 1), intptr_t(saved.size() - 2)}) {
-        require(b->dispatch(b, 24, 0, size, const_cast<char*>(saved.data()), 0) == 0,
+        require(b->dispatcher(b, 24, 0, size, const_cast<char*>(saved.data()), 0) == 0,
                 "Unterminated or partial VST state chunk accepted");
         require(chunk(b) == migrated, "Rejected partial VST chunk mutated state");
     }
     auto trailing = legacy;
     trailing += " extra";
     trailing.push_back(0);
-    require(b->dispatch(b, 24, 0, trailing.size(), trailing.data(), 0) == 0 && chunk(b) == migrated,
+    require(b->dispatcher(b, 24, 0, trailing.size(), trailing.data(), 0) == 0 && chunk(b) == migrated,
             "Embedded terminator hid trailing VST chunk data");
-    require(b->dispatch(b, 24, 0, legacy.size(), nullptr, 0) == 0 && chunk(b) == migrated,
+    require(b->dispatcher(b, 24, 0, legacy.size(), nullptr, 0) == 0 && chunk(b) == migrated,
             "Null VST chunk was not rejected");
-    require(a->dispatch(a, 24, 0, originalA.size(), const_cast<char*>(originalA.data()), 0) == 1 &&
-                b->dispatch(b, 24, 0, originalB.size(), const_cast<char*>(originalB.data()), 0) == 1,
+    require(a->dispatcher(a, 24, 0, originalA.size(), const_cast<char*>(originalA.data()), 0) == 1 &&
+                b->dispatcher(b, 24, 0, originalB.size(), const_cast<char*>(originalB.data()), 0) == 1,
             "Engine fixture restore rejected");
 }
 void factoryDefaults(Effect* a, Effect* b) {
     const auto originalA = chunk(a), originalB = chunk(b);
     for (int model = 0; model < 4; ++model) {
         for (int index = 0; index < 34; ++index)
-            if (index != 16 && index != 17) a->set(a, index, PARAMS[index].def == 1 ? 0.f : 1.f);
-        a->set(a, 2, model == 3 ? 0.f : 1.f);
+            if (index != 16 && index != 17) a->setParameter(a, index, PARAMS[index].def == 1 ? 0.f : 1.f);
+        a->setParameter(a, 2, model == 3 ? 0.f : 1.f);
         const char* state = hexachord::factoryStates[model];
-        require(a->dispatch(a, 24, 0, std::strlen(state) + 1, const_cast<char*>(state), 0) == 1,
+        require(a->dispatcher(a, 24, 0, std::strlen(state) + 1, const_cast<char*>(state), 0) == 1,
                 "Factory VST chunk rejected");
         for (int index = 0; index < 34; ++index) {
             const float expected = index == 2 ? model / 3.f : PARAMS[index].def;
-            require(std::fabs(a->get(a, index) - expected) < .000001f,
+            require(std::fabs(a->getParameter(a, index) - expected) < .000001f,
                     "Factory VST preset did not reset every parameter and Q-Link position");
         }
         require(chunk(b) == originalB, "Factory VST preset altered another instance");
     }
-    require(a->dispatch(a, 24, 0, originalA.size(), const_cast<char*>(originalA.data()), 0) == 1,
+    require(a->dispatcher(a, 24, 0, originalA.size(), const_cast<char*>(originalA.data()), 0) == 1,
             "Factory fixture restore rejected");
 }
 void factoryPrograms(Effect* a, Effect* b) {
     const auto originalA = chunk(a), originalB = chunk(b);
-    require(a->programs == 4 && b->programs == 4 && a->dispatch(a, 3, 0, 0, nullptr, 0) == 0,
+    require(a->numPrograms == 4 && b->numPrograms == 4 && a->dispatcher(a, 3, 0, 0, nullptr, 0) == 0,
             "Default-first factory program count or initial index changed");
     auto defaults = [&](Effect* effect, int program) {
         const int model = hexachord::factoryProgramModels[program];
-        require(effect->dispatch(effect, 3, 0, 0, nullptr, 0) == program, "Factory bank/model mapping mismatch");
+        require(effect->dispatcher(effect, 3, 0, 0, nullptr, 0) == program, "Factory bank/model mapping mismatch");
         for (int index = 0; index < 34; ++index)
-            require(std::fabs(effect->get(effect, index) - (index == 2 ? model / 3.f : PARAMS[index].def)) < .000001f,
+            require(std::fabs(effect->getParameter(effect, index) - (index == 2 ? model / 3.f : PARAMS[index].def)) < .000001f,
                     "Factory program did not restore every parameter and Q-Link position");
     };
     auto select = [&](Effect* effect, intptr_t program) {
         settingUi = true;
-        const auto result = effect->dispatch(effect, 2, 0, program, nullptr, 0);
+        const auto result = effect->dispatcher(effect, 2, 0, program, nullptr, 0);
         settingUi = false;
         require(!reenteredUi, "Factory program setter re-entered the host");
         return result;
@@ -389,7 +390,7 @@ void factoryPrograms(Effect* a, Effect* b) {
     for (int program = 0; program < 4; ++program) {
         struct { char name[24]; char guard[8]; } buffer;
         std::memset(&buffer, 0x6b, sizeof buffer);
-        require(a->dispatch(a, 29, program, 0, buffer.name, 0) == 1 &&
+        require(a->dispatcher(a, 29, program, 0, buffer.name, 0) == 1 &&
                     !std::strcmp(buffer.name, hexachord::factoryNames[hexachord::factoryProgramModels[program]]),
                 "Indexed factory name is incorrect");
         for (char value : buffer.guard) require(value == 0x6b, "Factory name exceeded the VST buffer");
@@ -407,16 +408,16 @@ void factoryPrograms(Effect* a, Effect* b) {
         for (int repeat = 0; repeat < 2; ++repeat) {
             for (int index = 0; index < 34; ++index)
                 if (index != 16 && index != 17 && (repeat == 0 || index != 2))
-                    a->set(a, index, PARAMS[index].def == 1 ? 0.f : 1.f);
-            if (repeat == 0) a->set(a, 2, hexachord::factoryProgramModels[program] == 3 ? 0.f : 1.f);
+                    a->setParameter(a, index, PARAMS[index].def == 1 ? 0.f : 1.f);
+            if (repeat == 0) a->setParameter(a, 2, hexachord::factoryProgramModels[program] == 3 ? 0.f : 1.f);
             else {
                 const float fractional = (hexachord::factoryProgramModels[program] + .125f) / 3.f;
-                a->set(a, 2, std::fmin(fractional, .99f));
-                require(a->dispatch(a, 3, 0, 0, nullptr, 0) == program,
+                a->setParameter(a, 2, std::fmin(fractional, .99f));
+                require(a->dispatcher(a, 3, 0, 0, nullptr, 0) == program,
                         "Tweaked sound lost its current factory bank index");
             }
-            a->set(a, 16, .1f);
-            a->set(a, 17, .9f);
+            a->setParameter(a, 16, .1f);
+            a->setParameter(a, 17, .9f);
             notifications.clear();
             displayUpdates = 0;
             require(select(a, program) == 1, "Factory program selection rejected");
@@ -433,7 +434,7 @@ void factoryPrograms(Effect* a, Effect* b) {
             for (const auto& notice : notifications) {
                 require(notice.effect == a && notice.index >= 0 && notice.index < 34 &&
                             notice.index != 16 && notice.index != 17 && !refreshed[notice.index] &&
-                            std::fabs(notice.value - a->get(a, notice.index)) < .000001f,
+                            std::fabs(notice.value - a->getParameter(a, notice.index)) < .000001f,
                         "Factory refresh reported an XY alias, duplicate, stale value or wrong instance");
                 refreshed[notice.index] = true;
             }
@@ -444,40 +445,40 @@ void factoryPrograms(Effect* a, Effect* b) {
         require(select(a, invalid) == 0 && chunk(a) == valid, "Invalid factory index altered state");
     for (int invalid : {-1, 4}) {
         char name[24] = "unchanged";
-        require(a->dispatch(a, 29, invalid, 0, name, 0) == 0 && !name[0] && chunk(a) == valid,
+        require(a->dispatcher(a, 29, invalid, 0, name, 0) == 0 && !name[0] && chunk(a) == valid,
                 "Invalid indexed factory name accepted or changed state");
     }
-    require(a->dispatch(a, 5, 0, 0, nullptr, 0) == 0 && a->dispatch(a, 29, 0, 0, nullptr, 0) == 0,
+    require(a->dispatcher(a, 5, 0, 0, nullptr, 0) == 0 && a->dispatcher(a, 29, 0, 0, nullptr, 0) == 0,
             "Null factory name buffer accepted");
     for (const char* invalid : {"INVALID", "HX73 3 0", "HX73 3 nan"}) {
-        require(a->dispatch(a, 24, 0, std::strlen(invalid) + 1, const_cast<char*>(invalid), 0) == 0,
+        require(a->dispatcher(a, 24, 0, std::strlen(invalid) + 1, const_cast<char*>(invalid), 0) == 0,
                 "Malformed factory/project state accepted");
         require(chunk(a) == valid, "Malformed state changed factory parameters");
         require(select(a, 3) == 1, "Invalid chunk armed the restore guard");
         defaults(a, 3);
     }
     for (int index = 0; index < 34; ++index)
-        if (index != 16 && index != 17) a->set(a, index, .25f);
-    a->set(a, 2, 1);
+        if (index != 16 && index != 17) a->setParameter(a, index, .25f);
+    a->setParameter(a, 2, 1);
     const auto project = chunk(a);
-    require(a->dispatch(a, 24, 0, project.size(), const_cast<char*>(project.data()), 0) == 1,
+    require(a->dispatcher(a, 24, 0, project.size(), const_cast<char*>(project.data()), 0) == 1,
             "Project state roundtrip rejected");
-    require(select(a, 0) == 1 && chunk(a) == project && a->dispatch(a, 3, 0, 0, nullptr, 0) == 3,
+    require(select(a, 0) == 1 && chunk(a) == project && a->dispatcher(a, 3, 0, 0, nullptr, 0) == 3,
             "Post-chunk host program selection erased restored edits or the engine");
     render(a, 0);
     require(select(a, 0) == 1 && chunk(a) == project, "Zero-frame processing cleared the restore guard");
     render(a, 128);
     require(select(a, 3) == 1, "Current program could not be reset after the first positive block");
     defaults(a, 3);
-    require(b->dispatch(b, 24, 0, originalB.size(), const_cast<char*>(originalB.data()), 0) == 1,
+    require(b->dispatcher(b, 24, 0, originalB.size(), const_cast<char*>(originalB.data()), 0) == 1,
             "Second-instance project restore rejected");
     render(a, 128);
     require(select(b, 2) == 1 && chunk(b) == originalB, "One instance cleared another instance's restore guard");
     render(b, 128);
     require(select(b, 2) == 1, "Second-instance restore guard did not clear on its own positive block");
     defaults(b, 2);
-    require(a->dispatch(a, 24, 0, originalA.size(), const_cast<char*>(originalA.data()), 0) == 1 &&
-                b->dispatch(b, 24, 0, originalB.size(), const_cast<char*>(originalB.data()), 0) == 1,
+    require(a->dispatcher(a, 24, 0, originalA.size(), const_cast<char*>(originalA.data()), 0) == 1 &&
+                b->dispatcher(b, 24, 0, originalB.size(), const_cast<char*>(originalB.data()), 0) == 1,
             "Factory program fixture restore rejected");
 }
 void chordPadControls(Effect* a, Effect* b) {
@@ -485,26 +486,26 @@ void chordPadControls(Effect* a, Effect* b) {
     const double radii[] = {0, .26, .52, .85};
     const auto originalA = chunk(a), originalB = chunk(b);
     auto restore = [&](Effect* effect, const std::string& saved) {
-        require(effect->dispatch(effect, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
+        require(effect->dispatcher(effect, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
                 "XY fixture state restore rejected");
     };
     auto point = [&](double x, double y, bool reverse) {
         settingUi = true;
         if (reverse) {
-            a->set(a, 17, float(y));
-            a->set(a, 16, float(x));
+            a->setParameter(a, 17, float(y));
+            a->setParameter(a, 16, float(x));
         } else {
-            a->set(a, 16, float(x));
-            a->set(a, 17, float(y));
+            a->setParameter(a, 16, float(x));
+            a->setParameter(a, 17, float(y));
         }
         settingUi = false;
         require(!reenteredUi, "XY gesture re-entered its host setter");
     };
     for (int index = 0; index < 34; ++index)
-        require(a->dispatch(a, 26, index, 0, nullptr, 0) == 1,
+        require(a->dispatcher(a, 26, index, 0, nullptr, 0) == 1,
                 "XY or DSP parameter lost host automation");
     for (int index : {-1, 34})
-        require(a->dispatch(a, 26, index, 0, nullptr, 0) == 0, "Invalid parameter became automatable");
+        require(a->dispatcher(a, 26, index, 0, nullptr, 0) == 0, "Invalid parameter became automatable");
     require(!std::strcmp(PARAMS[16].key, "ChordPadX") && !std::strcmp(PARAMS[17].key, "ChordPadY") &&
                 !PARAMS[16].nopts && !PARAMS[17].nopts && PARAMS[16].min == 0 && PARAMS[16].max == 1 &&
                 PARAMS[17].min == 0 && PARAMS[17].max == 1,
@@ -512,68 +513,68 @@ void chordPadControls(Effect* a, Effect* b) {
     for (int chord = 0; chord < 8; ++chord) {
         for (int inversion = 0; inversion < 4; ++inversion) {
             for (bool reverse : {false, true}) {
-                a->set(a, 0, float(chord) / 7);
-                a->set(a, 1, float(inversion) / 3);
+                a->setParameter(a, 0, float(chord) / 7);
+                a->setParameter(a, 1, float(inversion) / 3);
                 const auto expected = chunk(a);
                 const double angle = chord * pi / 4.;
                 const double x = .5 + 160. / 410. * radii[inversion] * std::sin(angle);
                 const double y = .5 + 160. / 410. * radii[inversion] * std::cos(angle);
-                require(std::fabs(a->get(a, 16) - x) < .000001 &&
-                            std::fabs(a->get(a, 17) - y) < .000001,
+                require(std::fabs(a->getParameter(a, 16) - x) < .000001 &&
+                            std::fabs(a->getParameter(a, 17) - y) < .000001,
                         "VST direct choices did not synchronize XY handles");
-                a->set(a, 0, float(inversion ? (chord + 4) % 8 : chord) / 7);
-                a->set(a, 1, 0);
+                a->setParameter(a, 0, float(inversion ? (chord + 4) % 8 : chord) / 7);
+                a->setParameter(a, 1, 0);
                 const auto before = chunk(a);
                 notifications.clear();
                 point(x, y, reverse);
                 require(chunk(a) == before && notifications.empty(),
                         "XY coordinate writes escaped before the audio-block boundary");
                 render(a, 128, 0, reverse);
-                require(std::fabs(a->get(a, 0) - float(chord) / 7) < .000001 &&
-                            std::fabs(a->get(a, 1) - float(inversion) / 3) < .000001,
+                require(std::fabs(a->getParameter(a, 0) - float(chord) / 7) < .000001 &&
+                            std::fabs(a->getParameter(a, 1) - float(inversion) / 3) < .000001,
                         "VST polar XY selection is incorrect");
                 require(chunk(a) == expected, "VST XY gesture changed other DSP state or chunk bytes");
                 require(chunk(b) == originalB, "VST XY gesture leaked to another instance");
                 for (const auto& notification : notifications)
                     require(notification.effect == a && notification.index >= 0 && notification.index < 2 &&
-                                std::fabs(notification.value - a->get(a, notification.index)) < .000001,
+                                std::fabs(notification.value - a->getParameter(a, notification.index)) < .000001,
                             "XY gesture reported a UI alias or unrelated parameter");
             }
         }
     }
     restore(a, originalA);
     render(a, 128);
-    a->set(a, 0, 1.25f / 7);
-    a->set(a, 1, 1.25f / 3);
-    a->set(a, 2, 1.25f / 3);
-    const float enginePosition = a->get(a, 2);
+    a->setParameter(a, 0, 1.25f / 7);
+    a->setParameter(a, 1, 1.25f / 3);
+    a->setParameter(a, 2, 1.25f / 3);
+    const float enginePosition = a->getParameter(a, 2);
     notifications.clear();
     displayUpdates = 0;
     point(.5, .5 + 160. / 410. * .52, false);
     render(a, 128);
-    require(a->get(a, 0) == 0 && std::fabs(a->get(a, 1) - 2.f / 3) < .000001,
+    require(a->getParameter(a, 0) == 0 && std::fabs(a->getParameter(a, 1) - 2.f / 3) < .000001,
             "XY gesture retained the changed chord or voicing Q-Link shadow");
-    require(a->get(a, 2) == enginePosition, "XY gesture reset an unrelated continuous Q-Link position");
+    require(a->getParameter(a, 2) == enginePosition, "XY gesture reset an unrelated continuous Q-Link position");
     require(notifications.size() == 2 && displayUpdates > 0,
             "XY gesture did not notify only its two changed DSP parameters");
     for (const auto& notification : notifications)
         require(notification.index < 2, "XY notification echoed an unrelated host parameter");
     const auto beforeInvalid = chunk(a);
-    const float x = a->get(a, 16), y = a->get(a, 17);
+    const float x = a->getParameter(a, 16), y = a->getParameter(a, 17);
     for (float invalid : {NAN, INFINITY, -INFINITY}) {
         point(invalid, invalid, false);
-        require(chunk(a) == beforeInvalid && a->get(a, 16) == x && a->get(a, 17) == y,
+        require(chunk(a) == beforeInvalid && a->getParameter(a, 16) == x && a->getParameter(a, 17) == y,
                 "VST invalid XY input mutated state or handles");
     }
     notifications.clear();
-    a->set(a, 0, 3.f / 7);
-    a->set(a, 1, 2.f / 3);
+    a->setParameter(a, 0, 3.f / 7);
+    a->setParameter(a, 1, 2.f / 3);
     render(a, 128);
     require(notifications.empty(), "Ordinary host enum changes were echoed as custom UI changes");
     point(.1, .1, false);
     restore(a, originalA);
     render(a, 128);
-    require(chunk(a) == originalA && a->get(a, 16) == .5f && a->get(a, 17) == .5f,
+    require(chunk(a) == originalA && a->getParameter(a, 16) == .5f && a->getParameter(a, 17) == .5f,
             "VST chunk restore retained a pending XY gesture or stale handles");
     restore(b, originalB);
 }
@@ -587,7 +588,7 @@ void chordPadAutomation(Effect* a, Effect* b) {
     const auto originalA = chunk(a), originalB = chunk(b);
     render(b, 128);
     auto restore = [&](Effect* effect, const std::string& saved) {
-        require(effect->dispatch(effect, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
+        require(effect->dispatcher(effect, 24, 0, saved.size(), const_cast<char*>(saved.data()), 0) == 1,
                 "Automation fixture state restore rejected");
     };
     for (bool recordReverse : {false, true}) {
@@ -596,9 +597,9 @@ void chordPadAutomation(Effect* a, Effect* b) {
         std::vector<Sample> recorded;
         std::vector<std::string> states;
         auto edit = [&](int index, float value) {
-            if (a->dispatch(a, 26, index, 0, nullptr, 0)) recorded.push_back({index, value});
+            if (a->dispatcher(a, 26, index, 0, nullptr, 0)) recorded.push_back({index, value});
             settingUi = true;
-            a->set(a, index, value);
+            a->setParameter(a, index, value);
             settingUi = false;
             require(!reenteredUi, "Recording an editor change re-entered its host setter");
         };
@@ -615,8 +616,8 @@ void chordPadAutomation(Effect* a, Effect* b) {
             require(notifications.empty(), "Editor recording notified synchronously");
             if (step.xy) require(chunk(a) == before, "Recorded XY writes bypassed the audio-block boundary");
             render(a, 128);
-            require(std::fabs(a->get(a, 0) - step.chord / 7.f) < .000001f &&
-                        std::fabs(a->get(a, 1) - step.voicing / 3.f) < .000001f,
+            require(std::fabs(a->getParameter(a, 0) - step.chord / 7.f) < .000001f &&
+                        std::fabs(a->getParameter(a, 1) - step.voicing / 3.f) < .000001f,
                     "Recorded editor gesture mapped to the wrong musical selection");
             if (!step.xy) require(notifications.empty(), "Direct recorded choices were echoed as plugin edits");
             states.push_back(chunk(a));
@@ -624,8 +625,8 @@ void chordPadAutomation(Effect* a, Effect* b) {
         require(recorded.size() == states.size() * 2, "Host excluded a diagram coordinate from the recorded track");
         const auto captured = chunk(a);
         for (bool replayReverse : {false, true}) {
-            b->set(b, 16, .1f);
-            b->set(b, 17, .9f);
+            b->setParameter(b, 16, .1f);
+            b->setParameter(b, 17, .9f);
             restore(b, originalA);
             notifications.clear();
             render(b, 128);
@@ -635,7 +636,7 @@ void chordPadAutomation(Effect* a, Effect* b) {
                 notifications.clear();
                 for (int axis = 0; axis < 2; ++axis) {
                     const auto& sample = recorded[block * 2 + (replayReverse ? 1 - axis : axis)];
-                    b->set(b, sample.index, sample.value);
+                    b->setParameter(b, sample.index, sample.value);
                 }
                 require(notifications.empty(), "Automation replay notified inside a host setter");
                 if (steps[block].xy) require(chunk(b) == before, "Replayed XY writes bypassed the audio-block boundary");
@@ -648,8 +649,8 @@ void chordPadAutomation(Effect* a, Effect* b) {
                             "Coordinate automation replay notified an alias or another instance");
             }
             const auto saved = chunk(b);
-            b->set(b, 0, 0);
-            b->set(b, 1, 0);
+            b->setParameter(b, 0, 0);
+            b->setParameter(b, 1, 0);
             restore(b, saved);
             notifications.clear();
             render(b, 128);
@@ -672,10 +673,10 @@ int main(int argc, char** argv) {
     Effect* a = entry(host);
     Effect* b = entry(host);
     require(a && b && a != b, "Two VST instances");
-    require(a->magic == 0x56737450 && a->inputs == 0 && a->outputs == 2 && a->parameters == 34, "VST instrument ABI");
-    require(a->uid == 0x48783733 && a->version == 1000, "Stable identity and development version");
+    require(a->magic == 0x56737450 && a->numInputs == 0 && a->numOutputs == 2 && a->numParams == 34, "VST instrument ABI");
+    require(a->uniqueID == 0x48783733 && a->version == 1000, "Stable identity and development version");
     require(a->flags & (1 << 8), "Instrument flag");
-    require(a->dispatch(a, 0, 0, 0, nullptr, 0) == 1, "VST open");
+    require(a->dispatcher(a, 0, 0, 0, nullptr, 0) == 1, "VST open");
     require(parameterText(a, 45, 0) == "HexChord 73", "VST effect name");
     require(parameterText(a, 48, 0) == "HexChord 73", "VST product name");
     require(parameterText(a, 47, 0) == "Twisted Cable", "VST vendor name");
@@ -686,32 +687,32 @@ int main(int argc, char** argv) {
     enumControls(a, b);
     chordPadControls(a, b);
     chordPadAutomation(a, b);
-    a->dispatch(a, 10, 0, 0, nullptr, 44100);
-    a->dispatch(a, 11, 0, 257, nullptr, 0);
-    a->dispatch(a, 12, 0, 1, nullptr, 0);
+    a->dispatcher(a, 10, 0, 0, nullptr, 44100);
+    a->dispatcher(a, 11, 0, 257, nullptr, 0);
+    a->dispatcher(a, 12, 0, 1, nullptr, 0);
     require(render(a, 257) == 0, "New VST instance should be silent");
     require(render(b, 257) == 0, "Second VST instance should be silent");
-    a->set(a, 8, 0);
-    a->set(a, 9, 0);
-    a->set(a, 11, 0);
-    a->set(a, 12, 0);
-    a->set(a, 13, 0);
-    a->set(a, 14, 0);
-    a->set(a, 6, .8f);
-    require(std::fabs(a->get(a, 6) - .8f) < .00001f, "Parameter roundtrip");
-    require(std::fabs(b->get(b, 6) - .8f) > .01f, "VST instance parameter isolation");
+    a->setParameter(a, 8, 0);
+    a->setParameter(a, 9, 0);
+    a->setParameter(a, 11, 0);
+    a->setParameter(a, 12, 0);
+    a->setParameter(a, 13, 0);
+    a->setParameter(a, 14, 0);
+    a->setParameter(a, 6, .8f);
+    require(std::fabs(a->getParameter(a, 6) - .8f) < .00001f, "Parameter roundtrip");
+    require(std::fabs(b->getParameter(b, 6) - .8f) > .01f, "VST instance parameter isolation");
     char display[64]{};
-    a->dispatch(a, 7, 6, 0, display, 0);
+    a->dispatcher(a, 7, 6, 0, display, 0);
     require(std::fabs(std::atof(display) - 5023.773) < 1, "Curved parameter physical display");
     void* pointer = nullptr;
-    intptr_t bytes = a->dispatch(a, 23, 0, 0, &pointer, 0);
+    intptr_t bytes = a->dispatcher(a, 23, 0, 0, &pointer, 0);
     require(pointer && bytes > 1 && bytes <= 8192, "Bounded VST chunk");
     std::string chunk(static_cast<const char*>(pointer), size_t(bytes));
-    require(b->dispatch(b, 24, 0, bytes, chunk.data(), 0) == 1, "VST chunk reload");
-    for (int i = 0; i < 34; ++i) require(std::fabs(a->get(a, i) - b->get(b, i)) < .00001f, "VST restored parameter mismatch");
-    b->dispatch(b, 24, 0, 8, const_cast<char*>("INVALID"), 0);
-    require(std::fabs(b->get(b, 6) - .8f) < .00001f, "Invalid VST state mutated parameters");
-    require(b->dispatch(b, 24, 0, 8193, chunk.data(), 0) == 0, "Oversized VST chunk accepted");
+    require(b->dispatcher(b, 24, 0, bytes, chunk.data(), 0) == 1, "VST chunk reload");
+    for (int i = 0; i < 34; ++i) require(std::fabs(a->getParameter(a, i) - b->getParameter(b, i)) < .00001f, "VST restored parameter mismatch");
+    b->dispatcher(b, 24, 0, 8, const_cast<char*>("INVALID"), 0);
+    require(std::fabs(b->getParameter(b, 6) - .8f) < .00001f, "Invalid VST state mutated parameters");
+    require(b->dispatcher(b, 24, 0, 8193, chunk.data(), 0) == 0, "Oversized VST chunk accepted");
     midi(a, 0x90, 48, 110, 65);
     require(render(a, 257, 65) > 0, "Sample-accurate VST note produced no audio");
     require(render(b, 257) == 0, "VST instance audio isolation");
@@ -725,9 +726,9 @@ int main(int argc, char** argv) {
     require(render(a, 128) > 0, "End-of-block event lost");
     midi(a, 0xb0, 120, 0, 0);
     require(render(a, 128) == 0, "Panic left VST audio");
-    a->dispatch(a, 12, 0, 0, nullptr, 0);
-    a->dispatch(a, 1, 0, 0, nullptr, 0);
-    b->dispatch(b, 1, 0, 0, nullptr, 0);
+    a->dispatcher(a, 12, 0, 0, nullptr, 0);
+    a->dispatcher(a, 1, 0, 0, nullptr, 0);
+    b->dispatcher(b, 1, 0, 0, nullptr, 0);
     dlclose(library);
     std::puts("Native VST ABI, sample timing, automation, continuous enum host contracts, state, isolation and host-block tests passed.");
 }

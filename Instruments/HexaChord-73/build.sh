@@ -57,7 +57,7 @@ out=build/portable-sanitize
 mkdir -p "$out"
 cc="${CC:-clang}"
 cxx="${CXX:-clang++}"
-flags=(-O1 -g -fPIC -fvisibility=hidden -ffp-contract=off -pthread -Wall -Wextra -Wno-unused-parameter -D_GNU_SOURCE -Isrc -Ibuild/native -Ibuild "-I$MPC_VST/wrapper" -fsanitize=address,undefined -fno-omit-frame-pointer)
+flags=(-O1 -g -fPIC -fvisibility=hidden -ffp-contract=off -pthread -Wall -Wextra -Wno-unused-parameter -D_GNU_SOURCE -Isrc -Ibuild/native -Ibuild "-I$MPC_VST/wrapper" -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
 "$cxx" -std=c++17 "${flags[@]}" -c src/native_dsp.cpp -o "$out/dsp.o"
 "$cxx" -std=c++17 "${flags[@]}" -c src/engine.cpp -o "$out/engine.o"
 "$cc" -std=gnu11 "${flags[@]}" -c src/vst_ui_wrap.c -o "$out/wrapper.o"
