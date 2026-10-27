@@ -61,7 +61,8 @@ flags=(-O1 -g -fPIC -fvisibility=hidden -ffp-contract=off -pthread -Wall -Wextra
 "$cxx" -std=c++17 "${flags[@]}" -c src/native_dsp.cpp -o "$out/dsp.o"
 "$cxx" -std=c++17 "${flags[@]}" -c src/engine.cpp -o "$out/engine.o"
 "$cc" -std=gnu11 "${flags[@]}" -c src/vst_ui_wrap.c -o "$out/wrapper.o"
-shared=(-shared -Wl,--no-undefined)
+# Sanitized Linux libraries resolve sanitizer hooks from the test host.
+shared=(-shared)
 if [[ "$(uname -s)" = Darwin ]]; then shared=(-dynamiclib -Wl,-undefined,error); fi
 "$cxx" "${shared[@]}" "$out/dsp.o" "$out/engine.o" "$out/wrapper.o" -pthread -lm -fsanitize=address,undefined -o "$out/hexachord-73.so"
 "$cxx" -std=c++17 "${flags[@]}" -DHEXACHORD_TESTING tests/native_engine_test.cpp src/engine.cpp "$out/dsp.o" -lm -o "$out/engine-test"
