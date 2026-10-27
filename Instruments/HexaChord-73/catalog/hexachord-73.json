@@ -7,6 +7,11 @@
   "kind": "instrument",
   "license": "GPL-3.0-or-later",
   "style": "synth",
-  "tags": ["chord", "polyphonic", "stereo"],
-  "summary": "Stereo chord synthesizer with four engines, eight chords, four voicings and a touchscreen chord diagram."
+  "tags": [
+    "chord",
+    "polyphonic",
+    "stereo"
+  ],
+  "summary": "Stereo chord synthesizer with four engines, eight chords, four voicings and a touchscreen chord diagram.",
+  "screenshot": "https://raw.githubusercontent.com/Eurikon/mpc-vst-plugins/cd66bda58b81eca440c25029de9cd93f69ae260a/media/hexachord-73.png"
 }

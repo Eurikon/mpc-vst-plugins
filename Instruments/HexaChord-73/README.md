@@ -12,6 +12,13 @@ Choose from eight chords, four voicings and four synth engines: Felt 73, Ana 78,
 
 **Current release:** 1.0.0, targeting ARMv7 and MPC OS 3.x.
 
+| Engine | Sound |
+| --- | --- |
+| Felt 73 | Struck body and tine tones, with velocity-dependent bark and damping. |
+| Ana 78 | Detuned saw and pulse oscillators, pitch drift and a resonant four-pole filter. |
+| Poly DCO Pulse | Stable saw and PWM tones, an octave divider and stereo chorus. |
+| Prism Bell | Inharmonic phase-modulation tones with separate strike and ring controls. |
+
 ## Playing
 
 - **PERFORM:** the complete overview, including sound, chord, envelope and effects.
