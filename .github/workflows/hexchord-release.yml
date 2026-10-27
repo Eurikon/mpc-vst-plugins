@@ -1,0 +1,60 @@
+name: HexChord draft release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version X.Y.Z
+        required: true
+        default: '1.0.0'
+        type: string
+      dry_run:
+        description: Only upload workflow artifacts
+        default: true
+        type: boolean
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: port
+      - uses: actions/checkout@v4
+        with:
+          repository: sd88me/mpc-vst-plugins
+          ref: fc1ea20ff83779d3f47fb43177f5284f59e57a99
+          path: mpc-vst-build-tools
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build, test and package
+        working-directory: port/Instruments/HexaChord-73
+        env:
+          MPC_VST: ${{ github.workspace }}/mpc-vst-build-tools
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          bash test.sh
+          python3 -m venv build/art-venv
+          build/art-venv/bin/python -m pip install -r requirements-art.txt
+          PLAYWRIGHT_BROWSERS_PATH="$PWD/build/browser" build/art-venv/bin/python -m playwright install --with-deps chromium
+          bash build.sh skin
+          bash build.sh
+          bash package.sh "$RELEASE_VERSION"
+          cd dist
+          sha256sum "HexChord-73-$RELEASE_VERSION-mpc-armv7.zip" > "HexChord-73-$RELEASE_VERSION-mpc-armv7.zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HexChord-release-candidate
+          path: |
+            port/Instruments/HexaChord-73/dist/*
+            port/Instruments/HexaChord-73/build/preview_*.png
+      - name: Create draft
+        if: ${{ !inputs.dry_run }}
+        working-directory: port
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          printf '%s\n' 'HexChord 73: stereo chord synthesizer for MPC standalone.' 'CPU: WARN; start with one or two instances.' 'Hardware sign-off must match this draft ZIP before publication.' > /tmp/hexchord-release-notes.txt
+          gh release create "hexachord-73-v$RELEASE_VERSION" --draft --target "$GITHUB_SHA" --title "HexChord 73 $RELEASE_VERSION" --notes-file /tmp/hexchord-release-notes.txt "Instruments/HexaChord-73/dist/HexChord-73-$RELEASE_VERSION-mpc-armv7.zip" "Instruments/HexaChord-73/dist/HexChord-73-$RELEASE_VERSION-mpc-armv7.zip.sha256"

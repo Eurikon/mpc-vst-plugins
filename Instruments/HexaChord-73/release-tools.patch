@@ -1,0 +1,143 @@
+diff --git a/tools/release.py b/tools/release.py
+index 84987b8..d16c4f6 100644
+--- a/tools/release.py
++++ b/tools/release.py
+@@ -31,6 +31,14 @@ import skin_compat  # noqa: E402
+ 
+ HERE = os.path.dirname(os.path.abspath(__file__))
+ 
++
++def _json_or_none(path):
++    try:
++        return json.load(open(path))
++    except (OSError, ValueError):
++        return None
++
++
+ ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+ ap.add_argument("--so", required=True)
+ ap.add_argument("--skin", required=True, help="the skin folder '<vendor> - VST - <name>'")
+@@ -102,14 +110,20 @@ for script in ("install.sh", "uninstall.sh"):
+     open(p, "w", newline="\n").write(text)
+     os.chmod(p, 0o755)
+ 
+-# INSTALL.md
++needed_glibc = max_glibc(a.so)
++os_compat, os_why = skin_compat.os_compat(needed_glibc, _json_or_none(os.path.join(pdir, "Plugin Skins", "TUI.json")),
++                                       _json_or_none(os.path.join(pdir, "Plugin Skins", "Q-Links.json")))
++os_label = "MPC OS " + " and ".join(os_compat) + (" only" if len(os_compat) == 1 else "")
++print("MPC OS compatibility: %s%s" % (" and ".join(os_compat), "" if "2.x" in os_compat else " only (not 2.x: %s)" % "; ".join(os_why[:2])))
++
+ kind = "instrument" if attr.get("isInstrument") == "1" else "effect"
+ b = ""
+ if bench:
+-    b = ("\n## CPU\n\nMeasured on a Gen1 device (MPC Live/One/X/Force class, Cortex-A17) with `tools/bench.sh` from "
+-         "[mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins): worst p99 **%.1f%%** of one audio block, worst "
+-         "block %.1f%%, verdict **%s**. As a rule of thumb, several instances run comfortably when p99 is under 15%%.\n"
++    b = ("\n## CPU\n\nMeasured on a first-generation MPC OS device using the "
++         "[mpc-vst-plugins benchmark](https://github.com/sd88me/mpc-vst-plugins):\n"
++         "worst p99 **%.1f%%** of one audio block, maximum block %.1f%%, verdict **%s**.\n"
+          % (bench["p99_pct"], bench["max_pct"], bench["verdict"]))
++requires_md = "- Additional requirements: %s\n" % a.requires if a.requires else ""
+ extra_md = "".join("- `%s` (data next to the plugin)\n" % e for e in extras)
+ user_md = ("\nYour own files go in %s inside the plugin folder (`/sdcard/Synths/%s/`); the installer keeps them when you upgrade "
+            "and uninstall, and moves them there from the old `/sdcard/vst` location if you had installed the plugin that way.\n"
+@@ -120,18 +134,19 @@ install_md = """# {name} {ver}
+ 
+ ## Requirements
+ 
+-- A first-generation MPC OS standalone device (32-bit ARM, like the Force, MPC Live / Live II, One, X and Key 61).
+-  The installer refuses anything else. Newer models are untested.
+-- **Root shell access** (SSH) to the device. Stock MPC OS doesn't offer this; you need a modded unit.
+-- Tested on MPC OS with a Force. Installing plugins this way is unofficial: back up first, use at your own risk.
++- {os_label} on a first-generation MPC standalone device (32-bit ARM).
++- Installation runs with root privileges, provided by Plugin Manager USB or an existing privileged shell.
++{requires_md}
++## Install with Plugin Manager USB
+ 
+-## Install (scripted)
++1. Prepare the [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb) drive following its instructions.
++2. Copy `{top}-mpc-armv7.zip` into `local-plugins/` at the root of that USB drive.
++3. Open the manager on the MPC, select **Local**, choose **{name}**, then **Install**.
+ 
+-1. Unzip, then copy the whole folder to the device, e.g. `scp -r {top} root@<device-ip>:/tmp/`
+-2. Run it: `ssh root@<device-ip> sh /tmp/{top}/install.sh`
++Save your project first. The manager supplies the root privileges needed by the package installer.
+ 
+-The installer checks the device, **stops MPC** (save your project first), copies `portable/{skin}/` (the plugin, its skin
+-and its data, as one folder) into `/sdcard/Synths`, backs up `MPC.settings`, adds the plugin to MPC's plugin list from the
++The package installer checks the device, **stops MPC**, copies `portable/{skin}/` (the plugin, its skin
++and its data, as one folder) into the selected plugin directory, backs up `MPC.settings`, adds the plugin to MPC's plugin list from the
+ folder's `plugin-meta.xml` and starts MPC again. Running it again upgrades in place, keeping your own files.
+ An older install of this plugin (the previous layout, with the `.so` in `/sdcard/vst`) is replaced, not duplicated.
+ `-y` skips the confirmation prompt; `-t <folder>` installs into another Synths folder (for example on a card).
+@@ -139,17 +154,29 @@ An older install of this plugin (the previous layout, with the `.so` in `/sdcard
+ Then add **{name}** to a track from the plugin browser ({where}). Its screen appears in the plugin view,
+ and the Q-Links follow the page.
+ 
++## Install from an existing root shell (advanced)
++
++Copy the extracted `{top}/` folder to `/tmp/` on the device and run `sh /tmp/{top}/install.sh`.
++The default target is `/sdcard/Synths`; use `-t <folder>` to select another directory.
++If you already access that shell over SSH, for example:
++
++```sh
++scp -r {top} root@<device-ip>:/tmp/
++ssh root@<device-ip> sh /tmp/{top}/install.sh
++```
++
+ ## Uninstall
+ 
+-`ssh root@<device-ip> sh /tmp/{top}/uninstall.sh` removes the plugin folder and the plugin-list entry (it also stops and
++Select the plugin's removal action in Plugin Manager USB's **On MPC** tab.
++From an existing root shell, `sh /tmp/{top}/uninstall.sh` removes the plugin folder and the plugin-list entry (it also stops and
+ restarts MPC). Projects that use the plugin will load without it. Files you added yourself are kept.
+ 
+-## Install by hand
++## Install by hand (advanced)
+ 
+ 1. Copy `portable/{skin}/` to `/sdcard/Synths/{skin}/`. It holds `{so}`, `plugin-meta.xml`, `version.xml`, `Plugin Skins/`
+    and the data:
+ {extra_md}2. Stop MPC: `systemctl stop acvs`. If there is no `acvs` service (`systemctl cat acvs` fails, as on some MPC OS 2.x versions and on Hakai-enabled systems), use `systemctl stop inmusic-mpc`.
+-3. Back up the settings file, `MPC.settings` (on a Force: `/media/az01-internal/Settings/MPC/MPC.settings`).
++3. Back up the device's `MPC.settings` file.
+ 4. In `MPC.settings`, inside `<VALUE name="pluginList-arm"><KNOWNPLUGINS>`, add the line from `plugin-meta.xml` with
+    `%payload-path%` replaced by `/sdcard/Synths`. If there is no `pluginList-arm` value yet, add one just before `</PROPERTIES>`:
+    ```xml
+@@ -168,7 +195,7 @@ rebuild the whole plugin list from the plugin folders in `Synths` keep this plug
+ 
+ See `SHA256SUMS`. Made with [mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins).
+ """.format(name=name, ver=a.version, about=(a.about + "\n\n") if a.about else "", kind=kind, top=top, so=so_name,
+-           skin=skin_name, extra_md=extra_md, bench=b, user_md=user_md,
++           skin=skin_name, extra_md=extra_md, bench=b, user_md=user_md, os_label=os_label, requires_md=requires_md,
+            where="Instrument plugins" if kind == "instrument" else "Insert effects")
+ open(os.path.join(root, "INSTALL.md"), "w").write(install_md)
+ 
+@@ -188,18 +215,6 @@ def walk(top):
+             yield os.path.join(d, f)
+ 
+ 
+-def _json_or_none(path):
+-    try:
+-        return json.load(open(path))
+-    except (OSError, ValueError):
+-        return None
+-
+-
+-# which MPC OS generations the skin and library work on: ["2.x", "3.x"] or ["3.x"] (tools/skin_compat.py, docs/OS2_SKINS.md)
+-os_compat, os_why = skin_compat.os_compat(max_glibc(a.so), _json_or_none(os.path.join(pdir, "Plugin Skins", "TUI.json")),
+-                                          _json_or_none(os.path.join(pdir, "Plugin Skins", "Q-Links.json")))
+-print("MPC OS compatibility: %s%s" % (" and ".join(os_compat), "" if "2.x" in os_compat else " only (not 2.x: %s)" % "; ".join(os_why[:2])))
+-
+ plugin_id = a.id or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+ if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", plugin_id):
+     raise SystemExit("--id must be lowercase letters, digits and hyphens")
+@@ -218,7 +233,7 @@ manifest = {
+     "extras": extras,
+     "user_data": a.user_data,
+     "arch": elf_machine(a.so),
+-    "max_glibc": max_glibc(a.so),
++    "max_glibc": needed_glibc,
+     "os_compat": os_compat,
+     "param_compat": int(a.version.split(".")[0]),
+     "about": a.about,

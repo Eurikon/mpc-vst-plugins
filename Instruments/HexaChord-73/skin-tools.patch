@@ -1,0 +1,59 @@
+diff --git a/tools/shadow_skin.py b/tools/shadow_skin.py
+index 8713ba1..1be9e78 100644
+--- a/tools/shadow_skin.py
++++ b/tools/shadow_skin.py
+@@ -955,28 +955,30 @@ def build(layout_path, params, skin_dir, art_bin, png_from_ppm):
+                     kids.append(_placed(key, name, oi, x, y, rw, rh, extra={"Text": i}))
+                 (px, py, pw, ph), orects = popup_panel(w)
+                 shown = "IndexedEnabling/1/2/Parameter %d" % oi
+-                panel = "sh_pop_%d_%s" % (t, w["key"])
++                panel = "sh_pop_%d_%s%s" % (t, w["key"], csfx)
+                 panel_draw = ("image|%s|%d|%d|%d|%d|stretch" % (lk["img"], px, py, pw, ph) if lk
+-                              else "tile|%d|%d|%d|%d|%s|%s|2" % (px, py, pw, ph, LCD, ACCENT))
++                              else "tile|%d|%d|%d|%d|%s|%s|2" % (px, py, pw, ph, LCD, ACCENT if acc == "none" else acc))
+                 script += ["clear|" + LCD, panel_draw] + popup_heading_cmds(w) + ["crop|%s|%d|%d|%d|%d" % (art(panel), px, py, pw, ph)]
+-                pkey = "shPopPanel_%d_%s" % (t, w["key"])
++                pkey = "shPopPanel_%d_%s%s" % (t, w["key"], csfx)
+                 defs[pkey] = _local(pkey, [], [_sub("Image", {"version": 2, "imageType": "Regular", "colour": "0",
+                                                               "image": panel + ".png"}, _bounds(0, 0, pw, ph), "Image")])
+                 parts = [_placed(pkey, "%s list" % name, oi, px, py, pw, ph, focus="No")]
+                 n = len(w["options"])
+                 fills, inks = popup_option_fills(w), popup_option_inks(w)
+                 for o, (ox, oy, ow, oh) in enumerate(orects):
+-                    img = "sh_popopt_%d_%s_%d" % (t, w["key"], o)
+-                    for state, fill, ink in (("on", SEG_ON, SEG_ON_TX), ("off", fills[o], inks[o])):
++                    img = "sh_popopt_%d_%s_%d%s" % (t, w["key"], o, csfx)
++                    for state, fill, ink in (("on", mix_hex(acc, "ffffff", .25) if acc not in ("none", ACCENT) else SEG_ON, SEG_ON_TX), ("off", fills[o], inks[o])):
+                         script += ["clear|" + LCD, "seg|%d|%d|%d|%d|%s|%s|%s" % (ox, oy, ow, oh, fill, ink, w["options"][o]),
+                                    "crop|%s|%d|%d|%d|%d" % (art("%s_%s" % (img, state)), ox, oy, ow, oh)]
+-                    okey = "shPopOpt_%d_%s_%d" % (t, w["key"], o)
++                    okey = "shPopOpt_%d_%s_%d%s" % (t, w["key"], o, csfx)
+                     defs[okey] = _local(okey, [_action("Mouse Down", "Q-Link")],
+                                         [_button(img + "_on.png", img + "_off.png", o, n, ow, oh)])
+                     parts.append(_placed(okey, "%s %s" % (name, w["options"][o]), i, ox, oy, ow, oh, focus="No"))
+                 for c in parts:
+                     c["bounds"]["showWhenDataModelInvalid"] = "Show"
+                     c["bounds"]["additionalInvalidatingHandles"] = [shown]
++                    if cond(w):
++                        c["bounds"]["additionalInvalidatingHandles"].append(cond(w))
+                 on_top += parts
+             elif kind == "readout":
+                 x, y, rw, rh = w["cx"] - w["w"] // 2, w["cy"] - w["h"] // 2, w["w"], w["h"]
+@@ -1035,7 +1037,7 @@ def build(layout_path, params, skin_dir, art_bin, png_from_ppm):
+             else:  # enum_h / enum_v: radio group, one image button per option
+                 n = len(w["options"])
+                 for o, (x, y, sw, sh) in enumerate(seg_rects(w)):
+-                    img = "sh_seg_%s_%d" % (w["key"], o)
++                    img = "sh_seg_%s_%d%s" % (w["key"], o, sfx)
+                     lab = w["options"][o]
+                     baked_lab = " " if TITLE_FONT else lab   # see the button block's comment on this placeholder
+                     for state, fill, ink in (("on", SEG_ON, SEG_ON_TX), ("off", SEG_OFF, INK_DIM)):
+@@ -1046,7 +1048,7 @@ def build(layout_path, params, skin_dir, art_bin, png_from_ppm):
+                         script += ["clear|" + under(), draw, "crop|%s|%d|%d|%d|%d" % (ppm, x, y, sw, sh)]
+                         if TITLE_FONT and lab:
+                             label_overlays.append((ppms[-1][1], sw, sh, lab, SEG_ON_TX if state == "on" else INK_DIM))
+-                    key = "shSeg_%s_%d" % (w["key"], o)
++                    key = "shSeg_%s_%d%s" % (w["key"], o, sfx)
+                     defs[key] = _local(key, [_action("Mouse Down", "Q-Link")],
+                                        [_button(img + "_on.png", img + "_off.png", o, n, sw, sh)])
+                     kids.append(_placed(key, "%s %s" % (name, lab), i, x, y, sw, sh, focus="Yes" if o == 0 else "No"))

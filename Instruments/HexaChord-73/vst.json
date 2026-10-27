@@ -1,0 +1,11 @@
+{
+  "name": "HexChord 73",
+  "vendor": "Twisted Cable",
+  "uid": "Hx73",
+  "version": 1000,
+  "so": "hexachord-73.so",
+  "params": "build/mpc-params.json",
+  "defines": { "SAMPLE_ACCURATE": 1 },
+  "layout": "build/layout.conf",
+  "art": "html"
+}

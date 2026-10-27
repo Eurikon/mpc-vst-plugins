@@ -1,0 +1,5 @@
+:root { --seg-size: 19px; --sheen: 0; --shadow: none; }
+.seg-tx { font-weight: 700; letter-spacing: .015em; }
+.seg-sheen { display: none; }
+.seg.look-image:has(> svg[width="181"][height="34"]) .seg-tx { font-size: 22px; }
+.seg.look-image:has(> svg[width="270"][height="64"]) .seg-tx { font-size: 32px; }

@@ -1,0 +1,357 @@
+[
+  {
+    "name": "ChordType",
+    "type": "enum",
+    "choices": [
+      "Minor 9th",
+      "Major 9th",
+      "Minor 7th",
+      "Major 7th",
+      "Sus4 Add9",
+      "Min 11th",
+      "Vintage Triad",
+      "Detuned Oct"
+    ],
+    "default": "Minor 9th",
+    "id": 0,
+    "min": 0,
+    "max": 7,
+    "curve": "linear"
+  },
+  {
+    "name": "Inversion",
+    "type": "enum",
+    "choices": [
+      "Root",
+      "First",
+      "Second",
+      "Open Spread"
+    ],
+    "default": "Root",
+    "id": 1,
+    "min": 0,
+    "max": 3,
+    "curve": "linear"
+  },
+  {
+    "name": "SynthModel",
+    "type": "enum",
+    "choices": [
+      "Felt 73",
+      "Ana 78",
+      "Poly DCO Pulse",
+      "Prism Bell"
+    ],
+    "default": "Ana 78",
+    "id": 2,
+    "min": 0,
+    "max": 3,
+    "curve": "linear"
+  },
+  {
+    "name": "SubOsc",
+    "type": "percent",
+    "default": 35,
+    "id": 3,
+    "min": 0,
+    "max": 100,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "TapeWow",
+    "type": "percent",
+    "default": 25,
+    "id": 4,
+    "min": 0,
+    "max": 100,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "WowSpeed",
+    "type": "float",
+    "unit": "hz",
+    "min": 0.2,
+    "max": 3.0,
+    "default": 0.6,
+    "id": 5,
+    "curve": "linear"
+  },
+  {
+    "name": "Cutoff",
+    "type": "frequency",
+    "default": 1400,
+    "id": 6,
+    "min": 20,
+    "max": 20000,
+    "unit": "Hz",
+    "curve": "exponential"
+  },
+  {
+    "name": "Resonance",
+    "type": "percent",
+    "default": 20,
+    "id": 7,
+    "min": 0,
+    "max": 100,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "Attack",
+    "type": "time",
+    "unit": "ms",
+    "min": 10,
+    "max": 4000,
+    "default": 350,
+    "id": 8,
+    "curve": "squared"
+  },
+  {
+    "name": "Decay",
+    "type": "time",
+    "unit": "ms",
+    "min": 50,
+    "max": 5000,
+    "default": 1200,
+    "id": 9,
+    "curve": "squared"
+  },
+  {
+    "name": "Sustain",
+    "type": "percent",
+    "default": 75,
+    "id": 10,
+    "min": 0,
+    "max": 100,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "Release",
+    "type": "time",
+    "unit": "ms",
+    "min": 50,
+    "max": 6000,
+    "default": 2200,
+    "id": 11,
+    "curve": "squared"
+  },
+  {
+    "name": "TapeEcho",
+    "type": "percent",
+    "default": 30,
+    "id": 12,
+    "min": 0,
+    "max": 100,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "ShimmerVerb",
+    "type": "percent",
+    "default": 35,
+    "id": 13,
+    "min": 0,
+    "max": 100,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "ChorusMix",
+    "type": "percent",
+    "default": 35,
+    "id": 14,
+    "min": 0,
+    "max": 100,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "OutputGain",
+    "type": "gain",
+    "default": -3,
+    "id": 15,
+    "min": -60,
+    "max": 12,
+    "unit": "dB",
+    "curve": "linear"
+  },
+  {
+    "name": "FeltHammer",
+    "type": "percent",
+    "default": 100,
+    "id": 16,
+    "min": 0,
+    "max": 150,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "FeltTine",
+    "type": "percent",
+    "default": 100,
+    "id": 17,
+    "min": 0,
+    "max": 150,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "FeltBark",
+    "type": "percent",
+    "default": 140,
+    "id": 18,
+    "min": 0,
+    "max": 200,
+    "unit": "%",
+    "curve": "linear"
+  },
+  {
+    "name": "FeltDamping",
+    "type": "enum",
+    "choices": [
+      "Short",
+      "Normal",
+      "Long"
+    ],
+    "default": "Normal",
+    "id": 19,
+    "min": 0,
+    "max": 2,
+    "curve": "linear"
+  },
+  {
+    "name": "AnaDetune",
+    "type": "percent",
+    "default": 100,
+    "id": 20,
+    "min": 0,
+    "max": 200,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "AnaDrift",
+    "type": "percent",
+    "default": 100,
+    "id": 21,
+    "min": 0,
+    "max": 200,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "AnaFilterEnv",
+    "type": "percent",
+    "default": 100,
+    "id": 22,
+    "min": 0,
+    "max": 200,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "AnaWave",
+    "type": "enum",
+    "default": "Mix",
+    "id": 23,
+    "min": 0,
+    "max": 2,
+    "curve": "linear",
+    "choices": [
+      "Saw",
+      "Pulse",
+      "Mix"
+    ]
+  },
+  {
+    "name": "DcoPulseWidth",
+    "type": "percent",
+    "default": 34,
+    "id": 24,
+    "min": 10,
+    "max": 90,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "DcoPwmDepth",
+    "type": "percent",
+    "default": 16,
+    "id": 25,
+    "min": 0,
+    "max": 40,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "DcoPwmRate",
+    "type": "percent",
+    "default": 100,
+    "id": 26,
+    "min": 0,
+    "max": 300,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "DcoWave",
+    "type": "enum",
+    "default": "Both",
+    "id": 27,
+    "min": 0,
+    "max": 2,
+    "curve": "linear",
+    "choices": [
+      "Saw",
+      "Pulse",
+      "Both"
+    ]
+  },
+  {
+    "name": "PrismColour",
+    "type": "percent",
+    "default": 100,
+    "id": 28,
+    "min": 0,
+    "max": 150,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "PrismPartial",
+    "type": "percent",
+    "default": 100,
+    "id": 29,
+    "min": 0,
+    "max": 150,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "PrismStrike",
+    "type": "percent",
+    "default": 100,
+    "id": 30,
+    "min": 25,
+    "max": 200,
+    "curve": "linear",
+    "unit": "%"
+  },
+  {
+    "name": "PrismRing",
+    "type": "enum",
+    "default": "Normal",
+    "id": 31,
+    "min": 0,
+    "max": 2,
+    "curve": "linear",
+    "choices": [
+      "Short",
+      "Normal",
+      "Long"
+    ]
+  }
+]

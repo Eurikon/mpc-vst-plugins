@@ -1,0 +1,13 @@
+--- a/wrapper/vst2_wrap.c
++++ b/wrapper/vst2_wrap.c
+@@ -575,6 +575,10 @@
+         memcpy(w->chunk, p, v);
+         w->chunk[v - 1] = 0;
+         g_api->set_param(w->dsp, "state", w->chunk);
++        for (int i = 0; i < NPARAMS; i++) {
++            w->qacc[i] = 0;
++            w->last_pos[i] = -1;
++        }
+         return 1;
+     }
+     default: return 0;

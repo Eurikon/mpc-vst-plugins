@@ -1,0 +1,121 @@
+--- a/wrapper/vst2_wrap.c
++++ b/wrapper/vst2_wrap.c
+@@ -119,6 +119,7 @@
+     volatile char changed[NPARAMS];  /* params the plugin changed itself (step_of on an option), to report */
+     float last_pos[NPARAMS]; /* stepped params: the last position the host asked for, in steps (-1 = none yet) */
+     float qacc[NPARAMS];     /* qlink_ticks: turn events counted toward the next step (see setParameter) */
++    float host_pos[NPARAMS];
+     signed char last_on[NPARAMS];  /* last "<key>_on" value told to the host, +1 (0 = unknown, -1 = the engine has no such key) */
+     unsigned last_text[NPARAMS];   /* hash of a text readout's last value (see housekeeping) */
+     int on_poll, text_poll;        /* frames until the next "<key>_on" poll / readout poll (see housekeeping) */
+@@ -193,6 +194,7 @@
+     char buf[64];
+     if (i < 0 || i >= NPARAMS) return;
+     const param_t *p = &PARAMS[i];
++    if (p->qlink_continuous && !isfinite(n)) return;
+     int nudge = 0;
+     if (popup_set(w->open, i, n)) return;
+     if (p->step_target >= 0) {
+@@ -239,7 +241,14 @@
+          * wheel then takes qlink_ticks clicks per option too: opt in only where that is wanted. */
+         float pos = clamp01(n) * (p->nopts - 1), cur = get_norm(w, i) * (p->nopts - 1), idx;
+         nudge = fabsf(pos - roundf(pos)) > 0.001f;
+-        if (p->qlink_ticks > 1 && nudge && fabsf(pos - cur) < 0.5f) {
++        if (p->qlink_continuous) {
++            nudge = fabsf(pos - roundf(pos)) > 0.000001f;
++            /* Preserve the host's position so quantizing the DSP cannot reverse its next movement. */
++            w->host_pos[i] = nudge ? clamp01(n) : -1;
++            w->qacc[i] = 0;
++            w->last_pos[i] = -1;
++            idx = (float)lround((double)clamp01(n) * (p->nopts - 1));
++        } else if (p->qlink_ticks > 1 && nudge && fabsf(pos - cur) < 0.5f) {
+             float d = pos - cur;
+             w->last_pos[i] = pos;
+             if (d * w->qacc[i] < 0) w->qacc[i] = 0;
+@@ -289,7 +298,13 @@
+ }
+ 
+ static float getParameter(AEffect *e, int32_t i) {
+-    float v = get_norm(e->object, i);
++    wrap_t *w = e->object;
++    float v = get_norm(w, i);
++    if (i >= 0 && i < NPARAMS && PARAMS[i].qlink_continuous && w->host_pos[i] >= 0) {
++        float expected = (float)lround((double)w->host_pos[i] * (PARAMS[i].nopts - 1)) / (PARAMS[i].nopts - 1);
++        if (fabsf(v - expected) <= 0.000001f) v = w->host_pos[i];
++        else w->host_pos[i] = -1;
++    }
+     TRACE(1, i, v);
+     return v;
+ }
+@@ -578,6 +593,7 @@
+         for (int i = 0; i < NPARAMS; i++) {
+             w->qacc[i] = 0;
+             w->last_pos[i] = -1;
++            w->host_pos[i] = -1;
+         }
+         return 1;
+     }
+@@ -605,7 +621,7 @@
+     if (!w->dsp) { free(w); return NULL; }
+     w->master = master;
+     w->pos = DSP_BLOCK;
+-    for (int i = 0; i < NPARAMS; i++) w->last_pos[i] = w->last_norm[i] = -1;
++    for (int i = 0; i < NPARAMS; i++) w->last_pos[i] = w->last_norm[i] = w->host_pos[i] = -1;
+     AEffect *e = &w->fx;
+     e->magic = 0x56737450; /* 'VstP' */
+     e->dispatcher = dispatcher;
+--- a/tools/gen_vst.py
++++ b/tools/gen_vst.py
+@@ -82,7 +82,7 @@
+              "typedef struct { const char *key, *name, *unit; float min, max, def; int nopts; "
+              "const char *const *opts; int momentary; int string_display; int int_display; "
+              "int step_target; float step_delta; int popup_of; int hold_ms; int dynamic_name; int dynamic_display; "
+-             "int qlink_ticks; int no_poll; int nudge_pct; } param_t;"]
++             "int qlink_ticks; int no_poll; int nudge_pct; int qlink_continuous; } param_t;"]
+     key_to_index = {p["key"]: i for i, p in enumerate(params)}
+     rows = []
+     for i, p in enumerate(params):
+@@ -119,6 +119,11 @@
+         # ranges a slow Q-Link turn races through (a MIDI channel, a list of sets) want more; the data wheel then
+         # takes that many clicks per step too, since MPC sends both alike.
+         qticks = int(p.get("qlink_ticks", 0))
++        continuous = p.get("qlink_continuous", 0)
++        if type(continuous) not in (bool, int) or continuous not in (0, 1):
++            raise ValueError("qlink_continuous must be 0 or 1")
++        if continuous and (len(opts) < 2 or qticks > 1):
++            raise ValueError("qlink_continuous requires an option list without tick counting")
+         # "poll": false -- a "display":"string" param the wrapper should not poll for "<key>_on" (every 10 ms) and
+         # for text changes (every 100 ms; housekeeping in vst2_wrap.c): a readout that only changes on a tap, or
+         # one whose get_param() is costly.
+@@ -134,17 +139,17 @@
+             if isinstance(d, str):
+                 d = opts.index(d) if d in opts else 0
+             norm = d / (len(opts) - 1) if len(opts) > 1 else 0
+-            rows.append("    {%s, %s, \"\", 0, 0, %s, %d, OPTS_%d, %d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d, %d}," % (
++            rows.append("    {%s, %s, \"\", 0, 0, %s, %d, OPTS_%d, %d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d, %d, %d}," % (
+                 c_str(p["key"]), name, fl(norm), len(opts), i, bool(p.get("momentary")), is_str, is_int,
+-                step_target, fl(step_delta), popup_of, p.get("hold_ms", 0), dyn, dyn_disp, qticks, no_poll, nudge))
++                step_target, fl(step_delta), popup_of, p.get("hold_ms", 0), dyn, dyn_disp, qticks, no_poll, nudge, int(continuous)))
+         else:
+             lo, hi = p.get("min", 0), p.get("max", 1)
+             d = p.get("default", lo)
+             norm = (d - lo) / (hi - lo) if hi > lo else 0
+-            rows.append("    {%s, %s, %s, %s, %s, %s, 0, 0, %d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d, %d}," % (
++            rows.append("    {%s, %s, %s, %s, %s, %s, 0, 0, %d, %d, %d, %d, %s, %d, %d, %d, %d, %d, %d, %d, %d}," % (
+                 c_str(p["key"]), name, c_str(p.get("unit", "")), fl(lo), fl(hi), fl(norm),
+                 bool(p.get("momentary")), is_str, is_int, step_target, fl(step_delta), popup_of, p.get("hold_ms", 0), dyn, dyn_disp,
+-                qticks, no_poll, nudge))
++                qticks, no_poll, nudge, int(continuous)))
+     lines += ["static const param_t PARAMS[] = {"] + rows + ["};", "#define NPARAMS %d" % len(params),
+               "#define PLUG_NAME %s" % c_str(cfg["name"]), "#define PLUG_VENDOR %s" % c_str(cfg["vendor"]),
+               "#define PLUG_UID 0x%08x /* '%s' */" % (int.from_bytes(cfg["uid"].encode(), "big"), cfg["uid"]),
+@@ -152,7 +157,8 @@
+     lines += ["#define %s %s" % (k, v) for k, v in cfg.get("defines", {}).items()]
+     if cfg.get("effect"):
+         lines.append("#define PLUG_EFFECT 1")
+-    open(out, "w").write("\n".join(lines) + "\n")
++    with open(out, "w") as output:
++        output.write("\n".join(lines) + "\n")
+ 
+ 
+ def entry(cfg):

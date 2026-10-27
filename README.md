@@ -9,10 +9,12 @@ Each plugin has its own source, license and release package.
 |  | Plugin | Type |
 | --- | --- | --- |
 | <a href="Instruments/Monoslide/README.md"><img src="media/monoslide.png" width="160" alt="MonoSlide Voice page"></a> | [MonoSlide](Instruments/Monoslide/README.md) | Instrument |
+| <a href="Instruments/HexaChord-73/README.md"><img src="media/hexachord-73.png" width="160" alt="HexChord 73 Perform page"></a> | [HexChord 73](Instruments/HexaChord-73/README.md) | Instrument |
 
 ## Hardware and software compatibility
 
-**Tested locally:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1.
+**Tested locally:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1 and 3.10.<br>
+Each plugin's page records its compatibility and test coverage.
 
 ## Build from source
 

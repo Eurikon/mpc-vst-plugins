@@ -1,0 +1,27 @@
+name: HexChord checks
+on:
+  push:
+    paths: ['Instruments/HexaChord-73/**', '.github/workflows/hexchord-check.yml']
+  pull_request:
+    paths: ['Instruments/HexaChord-73/**', '.github/workflows/hexchord-check.yml']
+permissions:
+  contents: read
+jobs:
+  host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: port
+      - uses: actions/checkout@v4
+        with:
+          repository: sd88me/mpc-vst-plugins
+          ref: fc1ea20ff83779d3f47fb43177f5284f59e57a99
+          path: mpc-vst-build-tools
+      - name: Sanitizer and catalog registry checks
+        working-directory: port/Instruments/HexaChord-73
+        env:
+          MPC_VST: ${{ github.workspace }}/mpc-vst-build-tools
+        run: |
+          bash test.sh
+          python3 "$MPC_VST/tools/catalog_build.py" --registry catalog --check-registry

@@ -1,0 +1,8 @@
+HexChord 73
+Copyright (c) 2026 Twisted Cable
+Original instrument code and artwork: GPL-3.0-or-later; see LICENSE.
+
+The VST wrapper and skin tools derive from sd88me/mpc-vst-plugins (MIT).
+Native math routines retain the AssemblyScript Apache-2.0, musl/Arm MIT
+and Sun notices supplied alongside this file.
+Skin text uses Titillium Web (SIL Open Font License).
