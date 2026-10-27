@@ -4,7 +4,7 @@
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Download 1.0.0](https://img.shields.io/badge/Download-1.0.0-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/hexachord-73-v1.0.0/HexChord-73-1.0.0-mpc-armv7.zip)
 
-![HexChord 73 Perform page](../../media/hexachord-73.png)
+![HexChord 73 Chord page](../../media/hexachord-73.png)
 
 HexChord 73 is a stereo chord synthesizer for MPC standalone.<br>
 Play one note to trigger a four-tone chord, with four overlapping chord slots and release tails.<br>
