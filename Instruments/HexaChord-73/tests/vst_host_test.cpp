@@ -681,7 +681,7 @@ int main(int argc, char** argv) {
     Effect* b = entry(host);
     require(a && b && a != b, "Two VST instances");
     require(a->magic == 0x56737450 && a->numInputs == 0 && a->numOutputs == 2 && a->numParams == 34, "VST instrument ABI");
-    require(a->uniqueID == 0x48783733 && a->version == 1000, "Stable identity and development version");
+    require(a->uniqueID == 0x48783733 && a->version == PLUG_VERSION, "Stable identity and declared plugin version");
     require(a->flags & (1 << 8), "Instrument flag");
     require(a->dispatcher(a, 0, 0, 0, nullptr, 0) == 1, "VST open");
     require(parameterText(a, 45, 0) == "HexChord 73", "VST effect name");

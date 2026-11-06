@@ -1,14 +1,14 @@
 Cpus_allowed_list:	1
 policy                                       :                    0
 prio                                         :                  120
-plugin ./plugin-test-930f93cdfb2342368aed09e84ee4cfac/monoslide.so: instrument, 20 params, open 2.0 ms; block 128 @ 44100 Hz = 2902 us budget
+plugin ./plugin-test-315bb20abbeb4b618909e9bb6286016e/monoslide.so: instrument, 20 params, open 1.9 ms; block 128 @ 44100 Hz = 2902 us budget
 stage               mean%     p99%     max%  threads%    peak
-idle                  7.5      8.0      9.1       0.0    0.00
-1 voices              7.9      8.4      8.8       0.0    1.00
-4 voices              8.0      8.7      9.8       0.0    1.00
-8 voices              7.9      8.5     11.1       0.0    1.00
-16 voices             8.1      8.6     13.9      -0.0    1.00
-q-link sweep          8.8     10.5     15.9      -0.0    1.00
-release tail          7.6      8.1     15.9       0.0    0.04
-worst p99 10.5%, worst block 15.9%, background threads up to 0.0% of a core -> PASS
-{"plugin":"./plugin-test-930f93cdfb2342368aed09e84ee4cfac/monoslide.so","instrument":1,"open_ms":2.0,"p99_pct":10.5,"max_pct":15.9,"threads_pct":0.0,"verdict":"PASS"}
+idle                  7.6      8.0      9.5       0.0    0.00
+1 voices              7.9      8.5      8.9       0.0    1.00
+4 voices              8.0      8.8     10.2       0.0    1.00
+8 voices              8.0      8.8     11.4       0.0    1.00
+16 voices             8.1      8.8     14.4       0.0    1.00
+q-link sweep          9.0     10.6     15.6       0.0    1.00
+release tail          7.6      8.1     16.0       0.0    0.04
+worst p99 10.6%, worst block 16.0%, background threads up to 0.0% of a core -> PASS
+{"plugin":"./plugin-test-315bb20abbeb4b618909e9bb6286016e/monoslide.so","instrument":1,"open_ms":1.9,"p99_pct":10.6,"max_pct":16.0,"threads_pct":0.0,"verdict":"PASS"}

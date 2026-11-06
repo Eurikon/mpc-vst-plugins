@@ -99,7 +99,7 @@ def _factory_states(definitions):
 def factory_presets():
     configuration = json.loads((PROJECT / "vst.json").read_text())
     identity = {"name": "HexChord 73", "vendor": "Twisted Cable", "uid": "Hx73",
-                "version": 1000, "so": "hexachord-73.so"}
+                "version": 1010, "so": "hexachord-73.so"}
     if (not isinstance(configuration, dict) or type(configuration.get("version")) is not int or
             any(configuration.get(key) != value for key, value in identity.items())):
         raise ValueError("Factory preset identity must match HexChord 73")
