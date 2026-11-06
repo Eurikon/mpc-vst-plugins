@@ -33,5 +33,19 @@
     "device": "MPC Live II Retro",
     "firmware": "3.10",
     "date": "2026-10-27"
+  },
+  {
+    "id": "monoslide",
+    "version": "1.0.4",
+    "device": "MPC Live II Retro",
+    "firmware": "3.10",
+    "date": "2026-11-06"
+  },
+  {
+    "id": "hexachord-73",
+    "version": "1.0.1",
+    "device": "MPC Live II Retro",
+    "firmware": "3.10",
+    "date": "2026-11-06"
   }
 ]

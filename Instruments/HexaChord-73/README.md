@@ -62,7 +62,7 @@ cd mpc-vst-plugins/Instruments/HexaChord-73
 bash test.sh
 bash build.sh skin
 bash build.sh
-bash package.sh 1.0.0
+bash package.sh 1.0.1
 ```
 
 `test.sh` runs the native engine and VST host tests with ASan/UBSan.<br>

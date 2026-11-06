@@ -2,7 +2,7 @@
 
 [![Build checks](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/monoslide-check.yml/badge.svg?branch=main)](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/monoslide-check.yml)
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Download 1.0.3](https://img.shields.io/badge/Download-1.0.3-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/monoslide-v1.0.3/MonoSlide-1.0.3-mpc-armv7.zip)
+[![Download 1.0.4](https://img.shields.io/badge/Download-1.0.4-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/monoslide-v1.0.4/MonoSlide-1.0.4-mpc-armv7.zip)
 
 ![MonoSlide Voice page](../../media/monoslide.png)
 
@@ -11,7 +11,7 @@ It uses MPC's sequencer and receives MIDI on all channels, with last-note priori
 There are 18 sound parameters across Voice and Expert pages, plus a shared theme selector: Default, Copper, Glacier, Moss, Amethyst and Ember.<br>
 The theme is saved with the instrument; older states select Default.
 
-**Current release:** 1.0.3, targeting ARMv7 and MPC OS 3.x.
+**Current release:** 1.0.4, targeting ARMv7 and MPC OS 3.x.
 
 ## Build and test
 
@@ -30,7 +30,7 @@ cd Instruments/Monoslide
 ./test.sh
 make skin
 ./build.sh
-./package.sh 1.0.3
+./package.sh 1.0.4
 ```
 
 - `build.sh` applies or verifies `skin-tools.patch`, `release-tools.patch` and `host-test-compatibility.patch`, generates the skin and parameter table, then builds the ARM plugin using the upstream Docker workflow.
@@ -38,7 +38,7 @@ make skin
 - `make skin` creates local page previews with an isolated Python/Playwright environment under ignored `build/art-venv/` and `build/browser/`, using [requirements-art.txt](requirements-art.txt).<br>
   Existing development caches are reused when available.<br>
   Override `ART_PYTHON`, `ART_VENV` or `ART_BROWSER` as needed.
-- `package.sh` creates `dist/MonoSlide-1.0.3-mpc-armv7.zip` and runs the upstream catalog validator.<br>
+- `package.sh` creates `dist/MonoSlide-1.0.4-mpc-armv7.zip` and runs the upstream catalog validator.<br>
   CPU metadata is included only when `bench.txt` matches the built library hash in `bench.sha256`.<br>
   An optional second argument selects another output directory.
 
@@ -55,18 +55,21 @@ Its installer executes as root and restarts the MPC application; SSH is not requ
 
 **Tested on:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1 and 3.10.
 
+Release 1.0.4 was checked on OS 3.10; OS 3.9.1 checks used earlier releases.
+
 - Playback, project save/reload and two playing instances: confirmed on hardware during development.
 - Interface and theme controls: confirmed on 06-10-2026; the centered title was confirmed on 13-10-2026.
-- Q-Link automation: confirmed with MPC automation set to Write; no Q-Link issue remains.
-- Installation, managed removal and reinstallation on the SD card: verified on 14-10-2026, including the installed payload, USB manifest and manager reopening shortcut.
+- Native Q-Link automation: recording and Read playback verified on 06-11-2026 with synthetic encoder input through MPC's controller path.
+- Native preset and project state: save/reload verified on 06-11-2026, including waveform and theme changes.
+- Installation, managed removal and reinstallation: verified on 06-11-2026, including the installed payload, unrelated-file preservation, USB manifest and manager reopening shortcut.
 - Idle CPU processing: reduced from **8.7%** to **7.5%** of one core on 14-10-2026, about **14% less CPU**.
-- Device CPU benchmark: **PASS** on 14-10-2026, with p99 **10.5%** and maximum block **15.9%**.
+- Device CPU benchmark: **PASS** on 06-11-2026, with p99 **10.6%** and maximum block **16.0%**.
 - Regression validation: host, sanitized and native ARM output checks matched exactly across **27 cases and 2,772,485 frames** before and after optimization.
 - Final release ZIP: all **24** offline installation/reinstallation/tamper/rollback/uninstallation checks passed.
 
 CPU percentages measure a single core's 128-frame audio-block budget at 44,100 Hz, rather than the MPC overall CPU meter.<br>
-The current package includes the measured CPU result and tested library SHA-256 `c264f95582bf3ebac5a0a60e8ed093ae4b274f57fd02ebee838f6695947188ad`.<br>
-Playback was also checked on OS 3.10; the CPU figures above were measured on OS 3.9.1.<br>
+The current package includes the measured CPU result and tested library SHA-256 `c2c0ed312b5c97132ec35fcc4337224e1aa0d692cab272e31ed5ee328825d9ab`.<br>
+The CPU figures above were measured on OS 3.10.<br>
 OS 2.x, Gen2 and other device/firmware combinations remain unverified.
 
 ## Licensing
