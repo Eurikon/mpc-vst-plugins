@@ -26,7 +26,9 @@ Choose from eight chords, four voicings and four synth engines: Felt 73, Ana 78,
 - **CHORD:** drag across the diagram to select a chord and voicing, or use the separate buttons.
 
 The instrument sounds one octave below incoming notes.<br>
-The first Q-Link column controls engine, chord, voicing and sub bass, from top to bottom.<br>
+In Screen mode, Q-Links follow the selected tab.<br>
+On PERFORM, the first Q-Link column controls engine, chord, voicing and sub bass, from top to bottom.<br>
+SYNTH maps filter/wow, ADSR and engine selection; CHORD maps chord, voicing and sub bass.<br>
 Enable MPC automation **Write** to record parameter changes, then **Read** for playback.<br>
 Four factory presets restore each engine's default sound.<br>
 Effects include chorus, tape wow, stereo tape echo and a bright feedback delay.
@@ -36,7 +38,7 @@ Effects include chorus, tape wow, stereo tape echo and a bright feedback delay.
 **Tested on:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1 and 3.10.<br>
 This build targets ARMv7 and MPC OS 3.x.
 
-The original sd88me CPU workload measured **p99 22.5%, maximum block 24.2%: WARN** on OS 3.9.1.<br>
+The original sd88me CPU workload measured **p99 22.5%, maximum block 23.0%: WARN** on OS 3.10.<br>
 Start with one or two instances and check the MPC project CPU meter.<br>
 These figures measure one core's audio-block budget, rather than the overall CPU meter.
 

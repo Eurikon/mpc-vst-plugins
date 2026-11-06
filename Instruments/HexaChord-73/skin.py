@@ -27,7 +27,11 @@ ENGINE_CONTROLS = (
      'RING', 'PrismRing', 'SHORT,NORMAL,LONG'),
 )
 PAGES = ('PERFORM', 'SYNTH', 'CHORD')
-QLINKS = 'SynthModel,ChordType,Inversion,SubOsc,Cutoff,Resonance,TapeWow,WowSpeed,Attack,Decay,Sustain,Release,ChorusMix,TapeEcho,ShimmerVerb,OutputGain'
+PAGE_QLINKS = {
+    'PERFORM': 'SynthModel,ChordType,Inversion,SubOsc,Cutoff,Resonance,TapeWow,WowSpeed,Attack,Decay,Sustain,Release,ChorusMix,TapeEcho,ShimmerVerb,OutputGain',
+    'SYNTH': 'Cutoff,Resonance,TapeWow,WowSpeed,Attack,Decay,Sustain,Release,SynthModel',
+    'CHORD': 'ChordType,Inversion,SubOsc',
+}
 
 
 def svg(body, width=1280, height=800):
@@ -184,7 +188,7 @@ def generate():
             for x, y, label, key in controls:
                 radius = (25 if key == 'SubOsc' else 28) if page == 'PERFORM' else 52
                 lines.append(f'knob cx={x} cy={y} r={radius} label="{label}" key={key} ink_dim={accent} strip=design/knob-{index}.svg frames={KNOB_FRAMES}' + condition)
-        lines.append(f'qlinks "{page}" = {QLINKS}')
+        lines.append(f'qlinks "{page}" = {PAGE_QLINKS[page]}')
     (OUTPUT / 'layout.conf').write_text('\n'.join(lines) + '\n')
 
 
