@@ -141,6 +141,8 @@ def generate():
     for param in definitions:
         item = {"key": param["name"], "name": DISPLAY_NAMES.get(param["name"], param["name"]),
                 "default": param["default"]}
+        if param["name"] in ("ChordType", "Inversion"):
+            item["refresh_display"] = True
         if param["type"] == "enum":
             item["options"] = param["choices"]
             item["qlink_continuous"] = 1

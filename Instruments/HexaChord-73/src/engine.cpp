@@ -367,7 +367,7 @@ void render(void* instance, int16_t* output, int frames) {
         e.meters[i].store(std::isfinite(value) ? value : 0.f, std::memory_order_relaxed);
     }
 }
-const mpc_engine_t api = {create, destroy, midi, setParam, getParam, render, nullptr};
+const mpc_engine_t api = {create, destroy, midi, setParam, getParam, render, nullptr, nullptr};
 }
 
 extern "C" const mpc_engine_t* mpc_engine() { return &api; }

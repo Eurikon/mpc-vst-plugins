@@ -1,5 +1,6 @@
 name: MonoSlide checks
 on:
+  workflow_call:
   push:
     paths: ['Instruments/Monoslide/**', '.github/workflows/monoslide-check.yml']
   pull_request:
@@ -15,8 +16,8 @@ jobs:
           path: port
       - uses: actions/checkout@v4
         with:
-          repository: sd88me/mpc-vst-plugins
-          ref: fc1ea20ff83779d3f47fb43177f5284f59e57a99
+          repository: open-mpc/mpc-vst-plugins
+          ref: e4edb5472ff508dddb335215a3297364ca465a29
           path: mpc-vst-plugins
       - name: Sanitizer and catalog registry checks
         working-directory: port/Instruments/Monoslide
@@ -24,4 +25,4 @@ jobs:
           MPC_VST: ${{ github.workspace }}/mpc-vst-plugins
         run: |
           ./test.sh
-          python3 "$MPC_VST/tools/catalog_build.py" --registry catalog --check-registry
+          python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from catalog_build import load_registry; entries, errors = load_registry("catalog"); [print("%s: %s" % problem) for problem in errors]; sys.exit(1 if errors or not entries else 0)' "$MPC_VST/tools"

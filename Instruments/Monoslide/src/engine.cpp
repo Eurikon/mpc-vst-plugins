@@ -149,6 +149,6 @@ void render(void* ptr, int16_t* out, int frames) {
         out[2*i] = out[2*i+1] = static_cast<int16_t>(std::lrint(normalized * 32767.f));
     }
 }
-const mpc_engine_t api = {create, destroy, midi, setParam, getParam, render, nullptr};
+const mpc_engine_t api = {create, destroy, midi, setParam, getParam, render, nullptr, nullptr};
 }
 extern "C" const mpc_engine_t* mpc_engine() { return &api; }

@@ -17,6 +17,11 @@ p99, maximum = bench['p99_pct'], bench['max_pct']
 assert all(type(v) in (int, float) and math.isfinite(v) for v in (p99, maximum))
 assert 0 <= p99 <= maximum
 verdict = 'PASS' if p99 <= 15 and maximum <= 50 else 'WARN' if p99 <= 35 and maximum <= 80 else 'FAIL'
+if 'triggers' in bench or 'trigger_max_pct' in bench:
+    count, peak = bench.get('triggers'), bench.get('trigger_max_pct')
+    assert type(count) is int and count > 0 and type(peak) in (int, float) and math.isfinite(peak) and peak >= 0
+    if peak >= 90 and verdict != 'FAIL':
+        verdict = 'WARN'
 assert bench['verdict'] == verdict and verdict != 'FAIL', 'CPU result blocks release'
 note = os.environ['HEXCHORD_INSTANCE_NOTE']
 assert note.strip() and all(c.isprintable() for c in note), 'Instance guidance must be a printable single line'
@@ -61,5 +66,14 @@ with zipfile.ZipFile(temporary, 'w') as archive:
         archive.writestr(info, checksums.encode() if info.filename == prefix + 'SHA256SUMS' else data)
 temporary.replace(path)
 PY
-python3 "$MPC_VST/tools/catalog_check.py" "$output/HexChord-73-$version-mpc-armv7.zip" \
-    --catalog --expect-id hexachord-73 --expect-repo Eurikon/mpc-vst-plugins
+python3 - "$MPC_VST/tools" "$output/HexChord-73-$version-mpc-armv7.zip" <<'PYCHECK'
+import sys
+sys.path.insert(0, sys.argv[1])
+from catalog_check import check
+errors, warnings, record = check(sys.argv[2], catalog=True, expect_id="hexachord-73", expect_repo="Eurikon/mpc-vst-plugins", require_portable=True)
+for message in errors + warnings:
+    print(message, file=sys.stderr)
+if errors or warnings:
+    raise SystemExit('Catalog errors and warnings block release')
+print('Catalog package validation: OK, zero warnings')
+PYCHECK

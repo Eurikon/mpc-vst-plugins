@@ -5,7 +5,14 @@
   "version": 1000,
   "so": "hexachord-73.so",
   "params": "build/mpc-params.json",
-  "defines": { "SAMPLE_ACCURATE": 1 },
+  "defines": {
+    "SAMPLE_ACCURATE": 1
+  },
   "layout": "build/layout.conf",
-  "art": "html"
+  "art": "html",
+  "programs": {
+    "param": "SynthModel"
+  },
+  "cc": false,
+  "nrpn": false
 }

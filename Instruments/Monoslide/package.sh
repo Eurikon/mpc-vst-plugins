@@ -11,12 +11,18 @@ make -C "$here" prepare-tools MPC_VST="$MPC_VST"
 args=()
 if [ -f bench.txt ]; then
     python3 - <<'PYBENCH'
-import json, math
+import hashlib, json, math
 from pathlib import Path
 b = json.loads(Path('bench.txt').read_text().strip().splitlines()[-1])
+assert hashlib.sha256(Path('build/monoslide.so').read_bytes()).hexdigest() == Path('bench.sha256').read_text().strip(), 'CPU result is for a different library'
 p99, worst = float(b['p99_pct']), float(b['max_pct'])
 assert math.isfinite(p99) and math.isfinite(worst) and p99 >= 0 and worst >= p99
 verdict = 'PASS' if p99 <= 15 and worst <= 50 else 'WARN' if p99 <= 35 and worst <= 80 else 'FAIL'
+if 'triggers' in b or 'trigger_max_pct' in b:
+    count, peak = b.get('triggers'), b.get('trigger_max_pct')
+    assert type(count) is int and count > 0 and type(peak) in (int, float) and math.isfinite(peak) and peak >= 0
+    if peak >= 90 and verdict != 'FAIL':
+        verdict = 'WARN'
 assert b['verdict'] == verdict and verdict != 'FAIL', 'Benchmark blocks release'
 PYBENCH
     args+=(--bench bench.txt)
@@ -27,5 +33,14 @@ python3 "$MPC_VST/tools/release.py" \
     --repo Eurikon/mpc-vst-plugins --license GPL-3.0-or-later --id monoslide \
     --about "Monophonic acid bass instrument for MPC standalone." \
     --extra LICENSE:LICENSE --extra licenses:licenses "${args[@]}" -o "$output"
-python3 "$MPC_VST/tools/catalog_check.py" "$output/MonoSlide-$version-mpc-armv7.zip" \
-    --catalog --expect-id monoslide --expect-repo Eurikon/mpc-vst-plugins
+python3 - "$MPC_VST/tools" "$output/MonoSlide-$version-mpc-armv7.zip" <<'PYCHECK'
+import sys
+sys.path.insert(0, sys.argv[1])
+from catalog_check import check
+errors, warnings, record = check(sys.argv[2], catalog=True, expect_id="monoslide", expect_repo="Eurikon/mpc-vst-plugins", require_portable=True)
+for message in errors + warnings:
+    print(message, file=sys.stderr)
+if errors or warnings:
+    raise SystemExit('Catalog errors and warnings block release')
+print('Catalog package validation: OK, zero warnings')
+PYCHECK

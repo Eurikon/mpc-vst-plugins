@@ -64,7 +64,8 @@
     "options": [
       "Saw",
       "Square"
-    ]
+    ],
+    "refresh_display": true
   },
   {
     "key": "slide_time",

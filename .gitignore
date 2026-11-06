@@ -19,6 +19,7 @@
 !/README.md
 !/tested.json
 !/.gitignore
+!/.gitattributes
 !/.github/workflows/monoslide-check.yml
 !/.github/workflows/monoslide-release.yml
 !/.github/workflows/plugin-download-links.yml
@@ -31,6 +32,8 @@
 !/Instruments/Monoslide/package.sh
 !/Instruments/Monoslide/vst.json
 !/Instruments/Monoslide/params.json
+!/Instruments/Monoslide/params.lock
+!/Instruments/Monoslide/host-test-compatibility.patch
 !/Instruments/Monoslide/layout.template.conf
 !/Instruments/Monoslide/catalog/monoslide.json
 !/Instruments/Monoslide/skin.py
@@ -67,6 +70,8 @@
 !/Instruments/HexaChord-73/skin.py
 !/Instruments/HexaChord-73/skin.css
 !/Instruments/HexaChord-73/vst.json
+!/Instruments/HexaChord-73/params.lock
+!/Instruments/HexaChord-73/host-test-compatibility.patch
 !/Instruments/HexaChord-73/upstream.json
 !/Instruments/HexaChord-73/requirements-art.txt
 !/Instruments/HexaChord-73/skin-tools.patch
@@ -96,3 +101,4 @@
 !/media/hexachord-73.png
 !/.github/workflows/hexchord-check.yml
 !/.github/workflows/hexchord-release.yml
+!Instruments/Monoslide/bench.sha256

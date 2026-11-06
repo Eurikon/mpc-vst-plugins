@@ -55,8 +55,8 @@ The native plugin does not require Node.js or a WebAssembly runtime.
 
 ```sh
 git clone https://github.com/Eurikon/mpc-vst-plugins.git
-git clone https://github.com/sd88me/mpc-vst-plugins.git mpc-vst-build-tools
-git -C mpc-vst-build-tools checkout fc1ea20ff83779d3f47fb43177f5284f59e57a99
+git clone https://github.com/open-mpc/mpc-vst-plugins.git mpc-vst-build-tools
+git -C mpc-vst-build-tools checkout e4edb5472ff508dddb335215a3297364ca465a29
 export MPC_VST="$(cd mpc-vst-build-tools && pwd)"
 cd mpc-vst-plugins/Instruments/HexaChord-73
 bash test.sh
@@ -70,10 +70,10 @@ bash package.sh 1.0.0
 Set `MPC_BUILD_IMAGE` to reuse an existing compatible shared compiler image.<br>
 The supplied patches preserve native skin rendering and Q-Link behavior at the pinned upstream revision.<br>
 `package.sh` checks that the CPU record belongs to the exact library and creates the catalog-valid ZIP.<br>
-After changing the library, measure it again using the [upstream build and release procedure](https://sd88me.github.io/mpc-vst-plugins/workflow.html).
+After changing the library, measure it again using the [upstream build and release procedure](https://open-mpc.github.io/workflow.html).
 
 ## Licensing
 
 GPL-3.0-or-later for the original instrument code and artwork.<br>
-The [sd88me MPC VST project](https://github.com/sd88me/mpc-vst-plugins) provides the MIT-licensed wrapper, skin and release tools.<br>
+The [sd88me MPC VST project](https://github.com/open-mpc/mpc-vst-plugins) provides the MIT-licensed wrapper, skin and release tools.<br>
 See [LICENSE](LICENSE) and [licenses/NOTICE.txt](licenses/NOTICE.txt) for the included third-party notices.

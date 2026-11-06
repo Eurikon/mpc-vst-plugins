@@ -1,0 +1,59 @@
+diff --git a/wrapper/engine.h b/wrapper/engine.h
+index a837ef9..8d3fd37 100644
+--- a/wrapper/engine.h
++++ b/wrapper/engine.h
+@@ -41,7 +41,11 @@ const mpc_engine_t *mpc_engine(void);
+  * rename other controls. A weak symbol, not an mpc_engine_t member: an engine that doesn't define it is unaffected
+  * (a C++ engine defines it extern "C", as it does mpc_engine()). Unlike HAS_DISPLAY_REV, nothing is polled: only the
+  * keys the engine names are read back. `poc/selfset` is the test engine. */
++#if defined(__APPLE__)
++int mpc_engine_changed(void *inst, char *key, int len) __attribute__((weak_import));
++#else
+ int mpc_engine_changed(void *inst, char *key, int len) __attribute__((weak));
++#endif
+ 
+ /* Optional, MPC Sample only (vst.json "sample_page", wrapper/sample_page.h): draw into the page's free area, the rectangle
+  * x, y, w, h of px (0xRRGGBB, row-major, stride pixels a row), below the page's readouts and above its knobs. Called on the
+diff --git a/tools/test_port.sh b/tools/test_port.sh
+index 6bff56c..59d3667 100755
+--- a/tools/test_port.sh
++++ b/tools/test_port.sh
+@@ -17,7 +17,7 @@ python3 "$MV/tools/gen_vst.py" "$CFG" --params-h
+ ADAPTER_SRC=""
+ [ -n "$ADAPTER" ] && ADAPTER_SRC="$MV/adapters/$ADAPTER/${ADAPTER}_engine.c"
+ OUT="$ROOT/$PORT/build/host_test"
+-SAN="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1"
++SAN="-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g -O1"
+ 
+ build='
+   set -e
+@@ -41,7 +41,7 @@ export SOURCES CFLAGS PORT LIBS SAN MV ADAPTER_SRC OUT
+ cd "$ROOT"
+ MVMOUNT="-v $MV:$MV:ro"; [ "$ROOT" = "$MV" ] && MVMOUNT=""   # a port inside this repo is already mounted through ROOT
+ if [ "${2:-}" = aarch64 ]; then
+-  OUT="$OUT.aarch64"; SAN="-fsanitize=undefined -fno-omit-frame-pointer -g -O1"
++  OUT="$OUT.aarch64"; SAN="-fsanitize=undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -g -O1"
+   docker run --rm --platform linux/arm64 -u "$(id -u):$(id -g)" -v "$ROOT":"$ROOT" $MVMOUNT -w "$ROOT" \
+     -e SOURCES -e CFLAGS -e PORT -e LIBS -e SAN -e MV -e ADAPTER_SRC -e OUT arm64v8/gcc:12-bookworm bash -c "$build"$'\n"$OUT"'
+ elif command -v gcc >/dev/null && command -v g++ >/dev/null; then
+diff --git a/wrapper/vst2_wrap.c b/wrapper/vst2_wrap.c
+index ef2aaaa..1536e12 100644
+--- a/wrapper/vst2_wrap.c
++++ b/wrapper/vst2_wrap.c
+@@ -684,6 +684,7 @@ static void process(AEffect *e, float **in, float **out, int32_t n) { (void)in;
+  * the host hears about it from housekeeping(), at most every 1024 frames per control, so the screen follows without a
+  * flood. Returns 1 when the message was used here (it then doesn't go to the engine). */
+ /* an absolute value as cc_set applies it: an option list or a whole-number range rounds to the nearest step */
++#if defined(HAS_CC_MAP) || defined(HAS_NRPN)
+ static float cc_round(const param_t *p, float n) {
+     if (p->nopts > 1) return roundf(clamp01(n) * (p->nopts - 1)) / (p->nopts - 1);
+     if (p->int_display && p->max > p->min) return roundf(clamp01(n) * (p->max - p->min)) / (p->max - p->min);
+@@ -699,6 +700,8 @@ static void cc_set(wrap_t *w, int i, float n) {
+     w->cc_changed[i] = 1;
+ }
+ 
++#endif
++
+ static int midi_control(wrap_t *w, const uint8_t *m) {
+     if ((m[0] & 0xF0) != 0xB0) return 0;
+     int cc = m[1] & 127, v = m[2] & 127;

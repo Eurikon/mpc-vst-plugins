@@ -136,9 +136,13 @@ void enumControls(Effect* a, Effect* b) {
         require(values[i] == option, "Saved enum disagrees with displayed choice");
     };
     auto raw = [&](Effect* effect, int i, float expected) {
-        for (int read = 0; read < 4; ++read)
-            require(std::fabs(effect->getParameter(effect, i) - expected) < .000001f,
+        for (int read = 0; read < 4; ++read) {
+            const float received = effect->getParameter(effect, i);
+            if (std::fabs(received - expected) >= .000001f)
+                std::fprintf(stderr, "Enum %d read %d: received %.9g, expected %.9g\n", i, read, received, expected);
+            require(std::fabs(received - expected) < .000001f,
                     "Continuous enum host position changed on read");
+        }
     };
     auto send = [&](Effect* effect, int i, float value) {
         effect->setParameter(effect, i, value);
@@ -555,8 +559,11 @@ void chordPadControls(Effect* a, Effect* b) {
     require(a->getParameter(a, 0) == 0 && std::fabs(a->getParameter(a, 1) - 2.f / 3) < .000001,
             "XY gesture retained the changed chord or voicing Q-Link shadow");
     require(a->getParameter(a, 2) == enginePosition, "XY gesture reset an unrelated continuous Q-Link position");
-    require(notifications.size() == 2 && displayUpdates > 0,
+    require(notifications.size() == 2,
             "XY gesture did not notify only its two changed DSP parameters");
+    for (int frames = 0; frames < 2205 && displayUpdates == 0; frames += 128)
+        render(a, 128);
+    require(displayUpdates == 1, "XY display refresh exceeded the wrapper's 50 ms redraw interval");
     for (const auto& notification : notifications)
         require(notification.index < 2, "XY notification echoed an unrelated host parameter");
     const auto beforeInvalid = chunk(a);
@@ -687,6 +694,16 @@ int main(int argc, char** argv) {
     enumControls(a, b);
     chordPadControls(a, b);
     chordPadAutomation(a, b);
+    const auto unmappedState = chunk(a);
+    for (int controller = 20; controller <= 35; ++controller) midi(a, 0xb0, controller, 127, 0);
+    for (int parameter : {0, 6, 18}) {
+        midi(a, 0xb0, 99, 0, 0);
+        midi(a, 0xb0, 98, parameter, 0);
+        midi(a, 0xb0, 6, 127, 0);
+        midi(a, 0xb0, 38, 127, 0);
+    }
+    render(a, 128);
+    require(chunk(a) == unmappedState, "Unmapped MIDI CC/NRPN changed plugin parameters");
     a->dispatcher(a, 10, 0, 0, nullptr, 44100);
     a->dispatcher(a, 11, 0, 257, nullptr, 0);
     a->dispatcher(a, 12, 0, 1, nullptr, 0);

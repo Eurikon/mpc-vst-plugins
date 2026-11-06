@@ -3,7 +3,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 cd "$here"
 export MPC_VST="$(cd "${MPC_VST:-../../toolchain/upstream}" && pwd)"
-pin=fc1ea20ff83779d3f47fb43177f5284f59e57a99
+pin=e4edb5472ff508dddb335215a3297364ca465a29
 mode="${1:-arm}"
 [[ $# -le 1 && "$mode" =~ ^(arm|test|skin)$ ]] || { echo 'Usage: ./build.sh [arm|test|skin]' >&2; exit 1; }
 if [[ "$MPC_VST" != "$(cd ../../toolchain/upstream 2>/dev/null && pwd || true)" ]]; then
@@ -19,7 +19,7 @@ def matches():
                for name, value in expected.items())
 if not matches():
     subprocess.run(['git', '-C', tools, 'diff', '--quiet', 'HEAD', '--', *expected], check=True)
-    for name in ('skin-tools.patch', 'release-tools.patch', 'qlink-state-reset.patch', 'qlink-continuous-enum.patch'):
+    for name in ('skin-tools.patch', 'release-tools.patch', 'qlink-state-reset.patch', 'qlink-continuous-enum.patch', 'host-test-compatibility.patch'):
         subprocess.run(['git', '-C', tools, 'apply', root / name], check=True)
     if not matches():
         raise SystemExit('Patched upstream files differ from the approved pin')
@@ -47,7 +47,7 @@ if [[ "$mode" = arm ]]; then
         g++ -std=c++17 "${flags[@]}" -mtune=cortex-a17 -fno-fast-math -c /work/src/native_dsp.cpp -o build/portable-arm/engine-0.o
         g++ -std=c++17 "${flags[@]}" -c /work/src/engine.cpp -o build/portable-arm/engine-1.o
         gcc -std=gnu11 "${flags[@]}" -c /work/src/vst_ui_wrap.c -o build/portable-arm/vst-wrapper.o
-        g++ -shared -Wl,--no-undefined build/portable-arm/engine-0.o build/portable-arm/engine-1.o build/portable-arm/vst-wrapper.o -pthread -lm -flto -mtune=cortex-a17 -o build/portable-arm/hexachord-73.so
+        g++ -shared -Wl,--no-undefined build/portable-arm/engine-0.o build/portable-arm/engine-1.o build/portable-arm/vst-wrapper.o -pthread -lm -flto=2 -mtune=cortex-a17 -o build/portable-arm/hexachord-73.so
         strip build/portable-arm/hexachord-73.so
         cp build/portable-arm/hexachord-73.so build/hexachord-73.so
         readelf -h build/hexachord-73.so'
@@ -63,7 +63,7 @@ flags=(-O1 -g -fPIC -fvisibility=hidden -ffp-contract=off -pthread -Wall -Wextra
 "$cc" -std=gnu11 "${flags[@]}" -c src/vst_ui_wrap.c -o "$out/wrapper.o"
 # Sanitized Linux libraries resolve sanitizer hooks from the test host.
 shared=(-shared)
-if [[ "$(uname -s)" = Darwin ]]; then shared=(-dynamiclib -Wl,-undefined,error); fi
+if [[ "$(uname -s)" = Darwin ]]; then shared=(-dynamiclib -Wl,-U,_mpc_engine_changed); fi
 "$cxx" "${shared[@]}" "$out/dsp.o" "$out/engine.o" "$out/wrapper.o" -pthread -lm -fsanitize=address,undefined -o "$out/hexachord-73.so"
 "$cxx" -std=c++17 "${flags[@]}" -DHEXACHORD_TESTING tests/native_engine_test.cpp src/engine.cpp "$out/dsp.o" -lm -o "$out/engine-test"
 "$cxx" -std=c++17 "${flags[@]}" tests/vst_host_test.cpp -ldl -o "$out/vst-test"

@@ -32,8 +32,7 @@ typedef struct {
     atomic_int restoring;
 } hexachord_wrap_t;
 
-enum { effSetProgram = 2, effGetProgram = 3, effSetProgramName = 4,
-       effGetProgramName = 5, effGetProgramNameIndexed = 29 };
+enum { effSetProgramName = 4 };
 
 _Static_assert(ATOMIC_INT_LOCK_FREE == 2, "Program restore guard must remain lock-free");
 
@@ -93,9 +92,9 @@ static void setParameter(AEffect *effect, int32_t index, float value) {
 static void applyChordPad(AEffect *effect) {
     wrap_t *instance = effect->object;
     char pending[2];
-    if (g_api->get_param(instance->dsp, "ChordPadPending", pending, sizeof pending) <= 0 || pending[0] != '1') return;
+    if (eng_get(instance, "ChordPadPending", pending, sizeof pending) <= 0 || pending[0] != '1') return;
     const float before[] = {get_norm(instance, 0), get_norm(instance, 1)};
-    g_api->set_param(instance->dsp, "ChordPadApply", "1");
+    eng_set(instance, "ChordPadApply", "1");
     for (int parameter = 0; parameter < 2; ++parameter) {
         if (before[parameter] == get_norm(instance, parameter)) continue;
         instance->qacc[parameter] = 0;
@@ -129,6 +128,7 @@ static intptr_t dispatcher(AEffect *effect, int32_t operation, int32_t index,
         for (int parameter = 0; parameter < NPARAMS; ++parameter)
             instance->base.changed[parameter] = parameter != 16 && parameter != 17;
         instance->base.need_update_display = 1;
+        instance->base.update_wait = 0;
         return 1;
     }
     if (operation == effGetProgram) return programIndex(effect);

@@ -18,13 +18,13 @@ The theme is saved with the instrument; older states select Default.
 Requires Docker with ARMv7 support, Python 3, Make and a C++17 compiler.<br>
 Linux x86 emulation is also needed for wrapper tests on macOS or ARM hosts.<br>
 Local skin previews require Python 3.11 and Chromium's runtime dependencies.<br>
-Use the external [sd88me build tools](https://github.com/sd88me/mpc-vst-plugins) at the pinned revision below; they are not bundled in this repository.
+Use the external [sd88me build tools](https://github.com/open-mpc/mpc-vst-plugins) at the pinned revision below; they are not bundled in this repository.
 
 ```sh
 git clone https://github.com/Eurikon/mpc-vst-plugins.git
 cd mpc-vst-plugins
-git clone https://github.com/sd88me/mpc-vst-plugins.git ../mpc-vst-build-tools
-git -C ../mpc-vst-build-tools checkout fc1ea20ff83779d3f47fb43177f5284f59e57a99
+git clone https://github.com/open-mpc/mpc-vst-plugins.git ../mpc-vst-build-tools
+git -C ../mpc-vst-build-tools checkout e4edb5472ff508dddb335215a3297364ca465a29
 export MPC_VST="$(cd ../mpc-vst-build-tools && pwd)"
 cd Instruments/Monoslide
 ./test.sh
@@ -33,13 +33,13 @@ make skin
 ./package.sh 1.0.3
 ```
 
-- `build.sh` applies or verifies `skin-tools.patch` and `release-tools.patch`, generates the skin and parameter table, then builds the ARM plugin using the upstream Docker workflow.
+- `build.sh` applies or verifies `skin-tools.patch`, `release-tools.patch` and `host-test-compatibility.patch`, generates the skin and parameter table, then builds the ARM plugin using the upstream Docker workflow.
 - `test.sh` runs engine tests and the original Linux x86 ASan/UBSan wrapper test, using Docker on macOS or ARM hosts.
 - `make skin` creates local page previews with an isolated Python/Playwright environment under ignored `build/art-venv/` and `build/browser/`, using [requirements-art.txt](requirements-art.txt).<br>
   Existing development caches are reused when available.<br>
   Override `ART_PYTHON`, `ART_VENV` or `ART_BROWSER` as needed.
 - `package.sh` creates `dist/MonoSlide-1.0.3-mpc-armv7.zip` and runs the upstream catalog validator.<br>
-  CPU metadata is included only when a valid `bench.txt` exists.<br>
+  CPU metadata is included only when `bench.txt` matches the built library hash in `bench.sha256`.<br>
   An optional second argument selects another output directory.
 
 Outputs are under ignored `build/` and `dist/`.<br>

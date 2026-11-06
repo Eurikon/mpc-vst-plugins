@@ -2,6 +2,7 @@
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 MPC_VST="$(cd "$here" && cd "${MPC_VST:-../../toolchain/upstream}" && pwd)"
+make -C "$here" prepare-tools MPC_VST="$MPC_VST"
 make -C "$here" test MPC_VST="$MPC_VST"
 if [ "$(uname -s):$(uname -m)" = Linux:x86_64 ]; then
     exec bash "$MPC_VST/tools/test_port.sh" "$here/vst.json"

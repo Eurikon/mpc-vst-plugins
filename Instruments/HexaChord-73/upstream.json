@@ -1,9 +1,11 @@
 {
-  "commit": "fc1ea20ff83779d3f47fb43177f5284f59e57a99",
+  "commit": "e4edb5472ff508dddb335215a3297364ca465a29",
   "patched_files": {
-    "tools/gen_vst.py": "d58c694ba5a7c87ab4833dac305cac0a7310efcf3abe33df3ec1bca2c2345bcc",
-    "tools/release.py": "01c940f9307bb672303d4a154facc24be4306a6cf0f771cb395807ef57d3ef65",
-    "tools/shadow_skin.py": "24bb2a8a37e2a29ff6047271776d5b3751e51b9adfc73f33d21d87397d5fb340",
-    "wrapper/vst2_wrap.c": "e68c4a9ccf3b52d9459f64ad0bf174c51917d16ce77356b71b415df953ab67b6"
+    "tools/gen_vst.py": "cc942856a96eb709ae3afc92116cc242801cd61600c6c733a53f5524bb4fa1dd",
+    "tools/release.py": "30d9ca26694e0f0dd2479fc7c141cfe84d6d9b2d87a33e4941d2fc15b708b2c8",
+    "tools/shadow_skin.py": "0939a9335e2783550e91070a1588871b8bb4865851e077ace9dc9e6bbd511222",
+    "wrapper/vst2_wrap.c": "8614014e0c14c9bff562b11a8214ba2d675b2970ee759a127d55944708617496",
+    "wrapper/engine.h": "a3fb54742ef329d320e6ee26644a6f4c6e51e60f4d193aea0fc1ce43c56eb584",
+    "tools/test_port.sh": "70a00228034fd3c29891e34ddb2c561d1dad46e5f3ea7ec3969d267fae571561"
   }
 }

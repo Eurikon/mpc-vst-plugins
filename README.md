@@ -20,7 +20,7 @@ Each plugin's page records its compatibility and test coverage.
 
 Follow each plugin's README for its commands and pinned external dependencies.<br>
 No Docker images, Akai firmware or local development toolchain are bundled here.<br>
-Build workflows use the external [sd88me MPC VST build tools](https://github.com/sd88me/mpc-vst-plugins).<br>
+Build workflows use the external [Open MPC VST build tools](https://github.com/open-mpc/mpc-vst-plugins).<br>
 That project established the standalone plugin build, package and community catalog workflow used by this collection.
 
 ## Releases and installation
