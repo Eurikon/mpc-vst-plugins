@@ -11,10 +11,10 @@ jobs:
   host:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           path: port
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           repository: open-mpc/mpc-vst-plugins
           ref: 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
@@ -29,10 +29,10 @@ jobs:
   gen2:
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           path: port
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           repository: open-mpc/mpc-vst-plugins
           ref: 0dc17120cd7e952e95eeecdd820ac9e495a75ee9

@@ -73,6 +73,7 @@ Gen2 builds pass ARM64 Linux host, sanitizer and repeated-unload checks; physica
 - Device CPU benchmark: **PASS** on 13-11-2026 / OS 3.10.1, with p99 **10.9%** and maximum block **16.0%**.
 - Regression validation: host, sanitized and native ARM output checks matched exactly across **27 cases and 2,772,485 frames** before and after optimization.
 - Final release ZIP: all **24** offline installation/reinstallation/tamper/rollback/uninstallation checks passed.
+- Official-format installation and removal: verified on OS 3.10.1 on 13-11-2026, with all 164 installed files checked by SHA-256 and unrelated files preserved.
 
 CPU percentages measure a single core's 128-frame audio-block budget at 44,100 Hz, rather than the MPC overall CPU meter.<br>
 The current package includes the measured CPU result and tested library SHA-256 `a38c4d3f3f27c58eddf24229cd9cc73765f0126498218aa340b994b769200ebf`.<br>

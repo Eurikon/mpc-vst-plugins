@@ -40,6 +40,8 @@ Earlier firmware checks used previous releases.<br>
 The SDK migration's loading, playback, controls and all three pages were checked on OS 3.10.1.<br>
 The 3.10.1 project save/reload recheck is deferred to the next update.<br>
 Gen2 builds pass ARM64 Linux host, sanitizer and repeated-unload checks; physical Gen2 testing remains pending.
+The release ZIP passed all 24 offline installation/reinstallation/tamper/rollback/uninstallation checks.<br>
+Official-format installation and removal were verified on OS 3.10.1 on 13-11-2026, with all 341 installed files checked by SHA-256 and unrelated files preserved.
 
 The original sd88me CPU workload measured **p99 22.5%, maximum block 23.5%: WARN** on OS 3.10.1.<br>
 Start with one or two instances and check the MPC project CPU meter.<br>
