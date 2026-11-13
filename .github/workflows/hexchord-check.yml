@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           repository: open-mpc/mpc-vst-plugins
-          ref: e4edb5472ff508dddb335215a3297364ca465a29
+          ref: 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
           path: mpc-vst-build-tools
       - name: Sanitizer and catalog registry checks
         working-directory: port/Instruments/HexaChord-73
@@ -26,3 +26,25 @@ jobs:
         run: |
           bash test.sh
           python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from catalog_build import load_registry; entries, errors = load_registry("catalog"); [print("%s: %s" % problem) for problem in errors]; sys.exit(1 if errors or not entries else 0)' "$MPC_VST/tools"
+  gen2:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: port
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: open-mpc/mpc-vst-plugins
+          ref: 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
+          path: mpc-vst-build-tools
+      - name: ARM64 sanitizers and static-runtime unload
+        working-directory: port/Instruments/HexaChord-73
+        env:
+          MPC_VST: ${{ github.workspace }}/mpc-vst-build-tools
+          MPC_BUILD_TARGET: aarch64
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1
+        run: |
+          bash test.sh
+          bash build.sh
+          build/portable-sanitize/vst-test "$PWD/build/aarch64/hexachord-73.so"

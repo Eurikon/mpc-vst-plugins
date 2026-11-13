@@ -2,8 +2,12 @@
   "name": "MonoSlide",
   "vendor": "Twisted Cable",
   "uid": "TcMs",
-  "version": 1040,
+  "version": 1050,
   "so": "monoslide.so",
+  "targets": [
+    "armv7",
+    "aarch64"
+  ],
   "params": "params.json",
   "defines": {
     "SAMPLE_ACCURATE": 1

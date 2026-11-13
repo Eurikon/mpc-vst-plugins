@@ -33,14 +33,24 @@ python3 "$MPC_VST/tools/release.py" \
     --repo Eurikon/mpc-vst-plugins --license GPL-3.0-or-later --id monoslide \
     --about "Monophonic acid bass instrument for MPC standalone." \
     --extra LICENSE:LICENSE --extra licenses:licenses "${args[@]}" -o "$output"
-python3 - "$MPC_VST/tools" "$output/MonoSlide-$version-mpc-armv7.zip" <<'PYCHECK'
+test -f build/aarch64/monoslide.so
+python3 "$MPC_VST/tools/release.py" \
+    --so build/aarch64/monoslide.so --skin "build/skin/Twisted Cable - VST - MonoSlide" \
+    --entry build/pluginlist-entry.xml --version "$version" \
+    --repo Eurikon/mpc-vst-plugins --license GPL-3.0-or-later --id monoslide \
+    --about "Monophonic acid bass instrument for MPC standalone." \
+    --extra LICENSE:LICENSE --extra licenses:licenses -o "$output"
+python3 - "$MPC_VST/tools" "$output/MonoSlide-$version-mpc-armv7.zip" "$output/MonoSlide-$version-mpc-aarch64.zip" <<'PYCHECK'
 import sys
 sys.path.insert(0, sys.argv[1])
 from catalog_check import check
-errors, warnings, record = check(sys.argv[2], catalog=True, expect_id="monoslide", expect_repo="Eurikon/mpc-vst-plugins", require_portable=True)
-for message in errors + warnings:
-    print(message, file=sys.stderr)
-if errors or warnings:
-    raise SystemExit('Catalog errors and warnings block release')
+for path in sys.argv[2:]:
+    errors, warnings, record = check(path, catalog=True, expect_id="monoslide", expect_repo="Eurikon/mpc-vst-plugins", require_portable=True)
+    for message in errors + warnings:
+        print(message, file=sys.stderr)
+    if errors or warnings:
+        raise SystemExit('Catalog errors and warnings block release')
 print('Catalog package validation: OK, zero warnings')
 PYCHECK
+python3 "$MPC_VST/tools/sdk_zip.py" "$output/MonoSlide-$version-mpc-sdk.zip" \
+    "$output/MonoSlide-$version-mpc-armv7.zip" "$output/MonoSlide-$version-mpc-aarch64.zip"

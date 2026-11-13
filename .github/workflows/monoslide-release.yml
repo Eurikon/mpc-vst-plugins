@@ -17,13 +17,13 @@ jobs:
       contents: read
   vst:
     needs: checks
-    uses: open-mpc/mpc-vst-plugins/.github/workflows/vst-release.yml@e4edb5472ff508dddb335215a3297364ca465a29
+    uses: open-mpc/mpc-vst-plugins/.github/workflows/vst-release.yml@0dc17120cd7e952e95eeecdd820ac9e495a75ee9
     permissions:
       contents: write
     with:
       tag: monoslide-v${{ inputs.version }}
       version: ${{ inputs.version }}
-      tools_ref: e4edb5472ff508dddb335215a3297364ca465a29
+      tools_ref: 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
       vst_dir: Instruments/Monoslide
       build: ./Instruments/Monoslide/build.sh && ./Instruments/Monoslide/package.sh ${{ inputs.version }}
       host_test: ./Instruments/Monoslide/test.sh

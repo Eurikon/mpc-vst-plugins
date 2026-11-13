@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: open-mpc/mpc-vst-plugins
-          ref: e4edb5472ff508dddb335215a3297364ca465a29
+          ref: 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
           path: mpc-vst-plugins
       - name: Sanitizer and catalog registry checks
         working-directory: port/Instruments/Monoslide
@@ -26,3 +26,44 @@ jobs:
         run: |
           ./test.sh
           python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); from catalog_build import load_registry; entries, errors = load_registry("catalog"); [print("%s: %s" % problem) for problem in errors]; sys.exit(1 if errors or not entries else 0)' "$MPC_VST/tools"
+  gen2:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: port
+      - uses: actions/checkout@v4
+        with:
+          repository: open-mpc/mpc-vst-plugins
+          ref: 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
+          path: mpc-vst-plugins
+      - name: ARM64 sanitizers and static-runtime unload
+        working-directory: port/Instruments/Monoslide
+        env:
+          MPC_VST: ${{ github.workspace }}/mpc-vst-plugins
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1
+        run: |
+          make prepare-tools
+          python3 skin.py
+          python3 "$MPC_VST/tools/gen_vst.py" vst.json --params-h
+          make test
+          flags=(-O1 -g -fPIC -fvisibility=hidden -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer -Ibuild -I"$MPC_VST/wrapper")
+          g++ -std=c++17 "${flags[@]}" -c src/engine.cpp -o build/gen2-engine.o
+          gcc -std=gnu11 "${flags[@]}" -DMPC_STATIC_CXX_RUNTIME=1 -c "$MPC_VST/wrapper/vst2_wrap.c" -o build/gen2-wrapper.o
+          g++ -shared -fsanitize=address,undefined -static-libstdc++ -static-libgcc -Wl,--exclude-libs,ALL build/gen2-engine.o build/gen2-wrapper.o -pthread -lm -o build/gen2-test.so
+          cat > build/plugin-unload.c <<'C'
+          #include <dlfcn.h>
+          #include <stdio.h>
+          int main(int argc, char **argv) {
+              if (argc != 2) return 2;
+              for (int cycle = 0; cycle < 32; ++cycle) {
+                  void *handle = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+                  if (!handle) { fprintf(stderr, "%s\n", dlerror()); return 1; }
+                  if (dlclose(handle)) return 1;
+              }
+              return 0;
+          }
+          C
+          gcc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all build/plugin-unload.c -ldl -o build/plugin-unload
+          build/plugin-unload "$PWD/build/gen2-test.so"

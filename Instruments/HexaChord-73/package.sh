@@ -31,7 +31,7 @@ python3 "$MPC_VST/tools/release.py" \
     --so build/hexachord-73.so --skin 'build/skin/Twisted Cable - VST - HexChord 73' \
     --entry build/pluginlist-entry.xml --version "$version" --bench bench.txt \
     --repo Eurikon/mpc-vst-plugins --license GPL-3.0-or-later --id hexachord-73 \
-    --requires 'Gen1 MPC; MPC OS 3.9.1 or 3.10; SD card plugin storage' \
+    --requires 'MPC OS 3.x' \
     --about 'Stereo chord synthesizer with four voice models and native MPC controls.' \
     --extra LICENSE:LICENSE --extra licenses:licenses -o "$output"
 python3 - "$output/HexChord-73-$version-mpc-armv7.zip" <<'PY'
@@ -66,14 +66,25 @@ with zipfile.ZipFile(temporary, 'w') as archive:
         archive.writestr(info, checksums.encode() if info.filename == prefix + 'SHA256SUMS' else data)
 temporary.replace(path)
 PY
-python3 - "$MPC_VST/tools" "$output/HexChord-73-$version-mpc-armv7.zip" <<'PYCHECK'
+test -f build/aarch64/hexachord-73.so
+python3 "$MPC_VST/tools/release.py" \
+    --so build/aarch64/hexachord-73.so --skin 'build/skin/Twisted Cable - VST - HexChord 73' \
+    --entry build/pluginlist-entry.xml --version "$version" \
+    --repo Eurikon/mpc-vst-plugins --license GPL-3.0-or-later --id hexachord-73 \
+    --requires 'MPC OS 3.x' \
+    --about 'Stereo chord synthesizer with four voice models and native MPC controls.' \
+    --extra LICENSE:LICENSE --extra licenses:licenses -o "$output"
+python3 - "$MPC_VST/tools" "$output/HexChord-73-$version-mpc-armv7.zip" "$output/HexChord-73-$version-mpc-aarch64.zip" <<'PYCHECK'
 import sys
 sys.path.insert(0, sys.argv[1])
 from catalog_check import check
-errors, warnings, record = check(sys.argv[2], catalog=True, expect_id="hexachord-73", expect_repo="Eurikon/mpc-vst-plugins", require_portable=True)
-for message in errors + warnings:
-    print(message, file=sys.stderr)
-if errors or warnings:
-    raise SystemExit('Catalog errors and warnings block release')
+for path in sys.argv[2:]:
+    errors, warnings, record = check(path, catalog=True, expect_id="hexachord-73", expect_repo="Eurikon/mpc-vst-plugins", require_portable=True)
+    for message in errors + warnings:
+        print(message, file=sys.stderr)
+    if errors or warnings:
+        raise SystemExit('Catalog errors and warnings block release')
 print('Catalog package validation: OK, zero warnings')
 PYCHECK
+python3 "$MPC_VST/tools/sdk_zip.py" "$output/HexChord-73-$version-mpc-sdk.zip" \
+    "$output/HexChord-73-$version-mpc-armv7.zip" "$output/HexChord-73-$version-mpc-aarch64.zip"

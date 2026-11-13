@@ -1,5 +1,5 @@
 diff --git a/tools/shadow_skin.py b/tools/shadow_skin.py
-index 3fcf899..0ec2574 100644
+index 3fcf899..1c63a7a 100644
 --- a/tools/shadow_skin.py
 +++ b/tools/shadow_skin.py
 @@ -1135,11 +1135,11 @@ def build(layout_path, params, skin_dir, art_bin, png_from_ppm):
@@ -62,3 +62,12 @@ index 3fcf899..0ec2574 100644
                      defs[key] = _local(key, [_action("Mouse Down", "Q-Link")],
                                         [_button(img + "_on.png", img + "_off.png", o, n, sw, sh)])
                      kids.append(_placed(key, "%s %s" % (name, lab), i, x, y, sw, sh, focus="Yes" if o == 0 else "No"))
+@@ -1533,7 +1536,7 @@ def vst_version(v):
+ 
+ def version_xml(vendor, name, version=None):
+     return ("<?xml version='1.0' encoding='utf-8'?>\n<plugincontent version=\"1.0\">\n"
+-            "\t<identifier>%s.vst.%s</identifier>\n\t<version>%s</version>\n</plugincontent>\n"
++            "\t<identifier>%s.vst.%s</identifier>\n\t<version>%s</version>\n\t<uiversion>0.1.0.0</uiversion>\n</plugincontent>\n"
+             % (vendor, name.lower().replace(" ", ""), vst_version(version)))
+ 
+ 

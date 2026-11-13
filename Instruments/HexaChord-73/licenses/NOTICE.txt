@@ -6,3 +6,5 @@ The VST wrapper and skin tools derive from sd88me/mpc-vst-plugins (MIT).
 Native math routines retain the AssemblyScript Apache-2.0, musl/Arm MIT
 and Sun notices supplied alongside this file.
 Skin text uses Titillium Web (SIL Open Font License).
+Statically linked GCC runtime code retains GPL-3.0-or-later with the
+GCC Runtime Library Exception 3.1; see GCC-Runtime-Exception-3.1.txt.

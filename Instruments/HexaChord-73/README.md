@@ -10,7 +10,7 @@ HexChord 73 is a stereo chord synthesizer for MPC standalone.<br>
 Play one note to trigger a four-tone chord, with four overlapping chord slots and release tails.<br>
 Choose from eight chords, four voicings and four synth engines: Felt 73, Ana 78, Poly DCO Pulse and Prism Bell.
 
-**Current release:** 1.0.1, targeting ARMv7 and MPC OS 3.x.
+**Version:** 1.0.2, with ARMv7 and AArch64 builds for MPC OS 3.x.
 
 | Engine | Sound |
 | --- | --- |
@@ -35,43 +35,50 @@ Effects include chorus, tape wow, stereo tape echo and a bright feedback delay.
 
 ## Compatibility and performance
 
-**Tested on:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1 and 3.10.<br>
-This build targets ARMv7 and MPC OS 3.x.
+**Tested on:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1, 3.10 and 3.10.1.<br>
+Earlier firmware checks used previous releases.<br>
+The SDK migration's loading, playback, controls and all three pages were checked on OS 3.10.1.<br>
+The 3.10.1 project save/reload recheck is deferred to the next update.<br>
+Gen2 builds pass ARM64 Linux host, sanitizer and repeated-unload checks; physical Gen2 testing remains pending.
 
-The original sd88me CPU workload measured **p99 22.5%, maximum block 23.0%: WARN** on OS 3.10.<br>
+The original sd88me CPU workload measured **p99 22.5%, maximum block 23.5%: WARN** on OS 3.10.1.<br>
 Start with one or two instances and check the MPC project CPU meter.<br>
 These figures measure one core's audio-block budget, rather than the overall CPU meter.
 
 ## Installation
 
-Copy the release ZIP into `local-plugins/` on your [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc) drive.<br>
-Open the manager, choose **Local**, select HexChord 73 and install.<br>
-Return to MPC, create a Plugin track and select HexChord 73.<br>
-Use the manager to update, reinstall or remove it.
+On **MPC OS 3.10.1 or later**, extract the SDK-format ZIP.<br>
+Copy its `Twisted Cable - VST - HexChord 73` folder into `VST2 Plugins` at the root of your SD card or USB drive.<br>
+In Preferences → Enhancements (Beta), enable **Enable Enhancements** and **External Plugin Support**.<br>
+Restart the MPC application if needed, then select HexChord 73 under **External Plugins** on a Plugin track.
+
+On earlier supported firmware, install the appropriate ARMv7 or AArch64 ZIP through the [OpenMPC Plugin Manager](https://github.com/open-mpc/mpc-vst-plugins/tree/main/tools/plugin_manager_g2) or your existing [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc).<br>
+Save your project before scripted installation restarts MPC.
 
 ## Build and test
 
-Requires Python 3, a C++17 compiler and Docker with ARMv7 support.<br>
+Requires Python 3, a C++17 compiler and Docker with ARMv7 and ARM64 support.<br>
 Skin generation also uses Python 3.11 and Chromium, installed into the ignored build directory.<br>
 The native plugin does not require Node.js or a WebAssembly runtime.
 
 ```sh
 git clone https://github.com/Eurikon/mpc-vst-plugins.git
 git clone https://github.com/open-mpc/mpc-vst-plugins.git mpc-vst-build-tools
-git -C mpc-vst-build-tools checkout e4edb5472ff508dddb335215a3297364ca465a29
+git -C mpc-vst-build-tools checkout 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
 export MPC_VST="$(cd mpc-vst-build-tools && pwd)"
 cd mpc-vst-plugins/Instruments/HexaChord-73
 bash test.sh
 bash build.sh skin
 bash build.sh
-bash package.sh 1.0.1
+bash package.sh 1.0.2
 ```
 
 `test.sh` runs the native engine and VST host tests with ASan/UBSan.<br>
-`build.sh` compiles the ARM library using the standard upstream ARMv7 compiler image.<br>
-Set `MPC_BUILD_IMAGE` to reuse an existing compatible shared compiler image.<br>
+`build.sh` builds both architectures using the standard upstream compiler images.<br>
+Set `MPC_BUILD_IMAGE` or `MPC_BUILD_IMAGE_AARCH64` to reuse compatible existing compiler images.<br>
+`MPC_BUILD_TARGET=armv7` or `MPC_BUILD_TARGET=aarch64` builds one architecture for development; release packaging requires both.<br>
 The supplied patches preserve native skin rendering and Q-Link behavior at the pinned upstream revision.<br>
-`package.sh` checks that the CPU record belongs to the exact library and creates the catalog-valid ZIP.<br>
+`package.sh` binds the Gen1 CPU record to its exact library, validates both architecture ZIPs, and creates the combined SDK-format ZIP.<br>
 After changing the library, measure it again using the [upstream build and release procedure](https://open-mpc.github.io/workflow.html).
 
 ## Licensing

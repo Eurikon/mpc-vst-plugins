@@ -1,8 +1,8 @@
 diff --git a/wrapper/vst2_wrap.c b/wrapper/vst2_wrap.c
-index ef2aaaa..4db0b32 100644
+index 82e9cd6..3757f7d 100644
 --- a/wrapper/vst2_wrap.c
 +++ b/wrapper/vst2_wrap.c
-@@ -903,6 +903,10 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
+@@ -931,6 +931,10 @@ static intptr_t dispatcher(AEffect *e, int32_t op, int32_t idx, intptr_t v, void
          w->chunk[v - 1] = 0;
          __atomic_store_n(&w->has_pend0, 0, __ATOMIC_RELEASE);   /* a restore sets parameter 0 too */
          eng_set(w, "state", w->chunk);

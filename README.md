@@ -13,7 +13,8 @@ Each plugin has its own source, license and release package.
 
 ## Hardware and software compatibility
 
-**Tested locally:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1 and 3.10.<br>
+**Tested locally:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1, 3.10 and 3.10.1.<br>
+Gen2 builds are checked offline on ARM64 Linux; physical Gen2 testing remains pending.<br>
 Each plugin's page records its compatibility and test coverage.
 
 ## Build from source
@@ -27,7 +28,9 @@ That project established the standalone plugin build, package and community cata
 
 Each plugin is packaged and submitted to the community catalog separately.<br>
 Release assets use plugin-specific names; source updates do not publish a new installer automatically.<br>
-The [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc) can install suitable released packages on the MPC.
+On MPC OS 3.10.1 or later, copy the SDK-format plugin folder into `VST2 Plugins` at the root of a drive.<br>
+The [OpenMPC Plugin Manager](https://github.com/open-mpc/mpc-vst-plugins/tree/main/tools/plugin_manager_g2) also installs community releases.<br>
+Existing [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc) installations remain an option on earlier supported firmware.
 
 ## Licensing
 

@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           repository: open-mpc/mpc-vst-plugins
-          ref: e4edb5472ff508dddb335215a3297364ca465a29
+          ref: 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
           path: mpc-vst-build-tools
       - uses: actions/setup-python@v7.1.0
         with:
@@ -48,6 +48,8 @@ jobs:
           bash package.sh "$RELEASE_VERSION"
           cd dist
           sha256sum "HexChord-73-$RELEASE_VERSION-mpc-armv7.zip" > "HexChord-73-$RELEASE_VERSION-mpc-armv7.zip.sha256"
+          sha256sum "HexChord-73-$RELEASE_VERSION-mpc-aarch64.zip" > "HexChord-73-$RELEASE_VERSION-mpc-aarch64.zip.sha256"
+          sha256sum "HexChord-73-$RELEASE_VERSION-mpc-sdk.zip" > "HexChord-73-$RELEASE_VERSION-mpc-sdk.zip.sha256"
       - uses: actions/upload-artifact@v7.0.2
         with:
           name: HexChord-release-candidate
@@ -62,4 +64,4 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           printf '%s\n' 'HexChord 73: stereo chord synthesizer for MPC standalone.' 'CPU: WARN; start with one or two instances.' 'Hardware sign-off must match this draft ZIP before publication.' > /tmp/hexchord-release-notes.txt
-          gh release create "hexachord-73-v$RELEASE_VERSION" --draft --target "$GITHUB_SHA" --title "HexChord 73 $RELEASE_VERSION" --notes-file /tmp/hexchord-release-notes.txt "Instruments/HexaChord-73/dist/HexChord-73-$RELEASE_VERSION-mpc-armv7.zip" "Instruments/HexaChord-73/dist/HexChord-73-$RELEASE_VERSION-mpc-armv7.zip.sha256"
+          gh release create "hexachord-73-v$RELEASE_VERSION" --draft --target "$GITHUB_SHA" --title "HexChord 73 $RELEASE_VERSION" --notes-file /tmp/hexchord-release-notes.txt Instruments/HexaChord-73/dist/*.zip Instruments/HexaChord-73/dist/*.zip.sha256

@@ -1,6 +1,6 @@
 MPC_VST ?= ../../toolchain/upstream
 PINNED_MPC_VST := $(abspath ../../toolchain/upstream)
-MPC_VST_COMMIT := e4edb5472ff508dddb335215a3297364ca465a29
+MPC_VST_COMMIT := 0dc17120cd7e952e95eeecdd820ac9e495a75ee9
 TOOLS := $(MPC_VST)/tools
 ifneq ($(filter default undefined,$(origin CXX)),)
 CXX := $(if $(filter Darwin,$(shell uname -s)),clang++,g++)

@@ -3,7 +3,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 cd "$here"
 export MPC_VST="$(cd "${MPC_VST:-../../toolchain/upstream}" && pwd)"
-pin=e4edb5472ff508dddb335215a3297364ca465a29
+pin=0dc17120cd7e952e95eeecdd820ac9e495a75ee9
 mode="${1:-arm}"
 [[ $# -le 1 && "$mode" =~ ^(arm|test|skin)$ ]] || { echo 'Usage: ./build.sh [arm|test|skin]' >&2; exit 1; }
 if [[ "$MPC_VST" != "$(cd ../../toolchain/upstream 2>/dev/null && pwd || true)" ]]; then
@@ -39,18 +39,38 @@ if [[ "$mode" = skin ]]; then
     exit
 fi
 if [[ "$mode" = arm ]]; then
-    mkdir -p build/portable-arm
-    docker run --rm --network none --platform linux/arm/v7 -u "$(id -u):$(id -g)" \
+    target="${MPC_BUILD_TARGET:-all}"
+    [[ "$target" =~ ^(all|armv7|aarch64)$ ]] || { echo 'MPC_BUILD_TARGET must be all, armv7 or aarch64' >&2; exit 1; }
+    for architecture in armv7 aarch64; do
+        [[ "$target" = all || "$target" = "$architecture" ]] || continue
+        if [[ "$architecture" = armv7 ]]; then
+            platform=linux/arm/v7
+            image="${MPC_BUILD_IMAGE:-arm32v7/gcc:11-bullseye}"
+        else
+            platform=linux/arm64
+            image="${MPC_BUILD_IMAGE_AARCH64:-arm64v8/gcc:12-bookworm}"
+        fi
+    docker run --rm --network none --platform "$platform" -u "$(id -u):$(id -g)" -e TARGET_ARCH="$architecture" \
         -v "$here:/work" -v "$MPC_VST:/upstream:ro" -w /work \
-        "${MPC_BUILD_IMAGE:-arm32v7/gcc:11-bullseye}" bash -euc '
-        flags=(-O3 -DNDEBUG -fPIC -fvisibility=hidden -ffp-contract=off -pthread -Wall -Wextra -Wno-unused-parameter -D_GNU_SOURCE -Isrc -Ibuild/native -Ibuild -I/upstream/wrapper -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -flto)
-        g++ -std=c++17 "${flags[@]}" -mtune=cortex-a17 -fno-fast-math -c /work/src/native_dsp.cpp -o build/portable-arm/engine-0.o
-        g++ -std=c++17 "${flags[@]}" -c /work/src/engine.cpp -o build/portable-arm/engine-1.o
-        gcc -std=gnu11 "${flags[@]}" -c /work/src/vst_ui_wrap.c -o build/portable-arm/vst-wrapper.o
-        g++ -shared -Wl,--no-undefined build/portable-arm/engine-0.o build/portable-arm/engine-1.o build/portable-arm/vst-wrapper.o -pthread -lm -flto=2 -mtune=cortex-a17 -o build/portable-arm/hexachord-73.so
-        strip build/portable-arm/hexachord-73.so
-        cp build/portable-arm/hexachord-73.so build/hexachord-73.so
-        readelf -h build/hexachord-73.so'
+        "$image" bash -euc '
+        flags=(-O3 -DNDEBUG -fPIC -fvisibility=hidden -ffp-contract=off -pthread -Wall -Wextra -Wno-unused-parameter -D_GNU_SOURCE -DMPC_STATIC_CXX_RUNTIME=1 -Isrc -Ibuild/native -Ibuild -I/upstream/wrapper -flto)
+        if [[ "$TARGET_ARCH" = armv7 ]]; then
+            architecture=(-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -mtune=cortex-a17)
+            out=build/portable-arm; destination=build
+        else
+            architecture=(-march=armv8-a -mtune=cortex-a55)
+            out=build/portable-aarch64; destination=build/aarch64
+        fi
+        mkdir -p "$out" "$destination"
+        flags+=("${architecture[@]}")
+        g++ -std=c++17 "${flags[@]}" -fno-fast-math -c /work/src/native_dsp.cpp -o "$out/engine-0.o"
+        g++ -std=c++17 "${flags[@]}" -c /work/src/engine.cpp -o "$out/engine-1.o"
+        gcc -std=gnu11 "${flags[@]}" -c /work/src/vst_ui_wrap.c -o "$out/vst-wrapper.o"
+        g++ -shared -Wl,--no-undefined -Wl,--exclude-libs,ALL -static-libstdc++ -static-libgcc "$out/engine-0.o" "$out/engine-1.o" "$out/vst-wrapper.o" -pthread -lm -flto=2 "${architecture[@]}" -o "$out/hexachord-73.so"
+        strip "$out/hexachord-73.so"
+        cp "$out/hexachord-73.so" "$destination/hexachord-73.so"
+        readelf -h "$destination/hexachord-73.so"'
+    done
     exit
 fi
 out=build/portable-sanitize

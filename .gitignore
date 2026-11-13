@@ -102,3 +102,5 @@
 !/.github/workflows/hexchord-check.yml
 !/.github/workflows/hexchord-release.yml
 !Instruments/Monoslide/bench.sha256
+!/Instruments/Monoslide/licenses/GCC-Runtime-Exception-3.1.txt
+!/Instruments/HexaChord-73/licenses/GCC-Runtime-Exception-3.1.txt

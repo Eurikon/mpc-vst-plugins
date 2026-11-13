@@ -1,8 +1,36 @@
+diff --git a/tools/build_port.sh b/tools/build_port.sh
+index c4121f9..672daf6 100755
+--- a/tools/build_port.sh
++++ b/tools/build_port.sh
+@@ -78,12 +78,12 @@ else
+       esac
+       OBJS=\"\$OBJS \$o\"
+     done
+-    gcc -O2 -Wall -Wextra -Wno-unused-parameter -fPIC -fvisibility=hidden -std=gnu11 -I'$PORT/build' -c /mv/wrapper/vst2_wrap.c -o '$OUT/vst2_wrap.o'
++    gcc -O2 -Wall -Wextra -Wno-unused-parameter -fPIC -fvisibility=hidden -DMPC_STATIC_CXX_RUNTIME=1 -std=gnu11 -I'$PORT/build' -c /mv/wrapper/vst2_wrap.c -o '$OUT/vst2_wrap.o'
+     if [ -n '$ADAPTER_SRC' ]; then
+       gcc -O2 -Wall -Wextra -fPIC -fvisibility=hidden -std=gnu11 -c '$ADAPTER_SRC' -o '$OUT/adapter.o'
+       OBJS=\"\$OBJS $OUT/adapter.o\"
+     fi
+-    g++ -O2 -shared -fPIC -fvisibility=hidden \$OBJS '$OUT/vst2_wrap.o' $LIBS -lpthread -ldl -Wl,--no-undefined -o '$OUT/$SO'
++    g++ -O2 -shared -fPIC -fvisibility=hidden \$OBJS '$OUT/vst2_wrap.o' $LIBS -lpthread -ldl -static-libstdc++ -static-libgcc -Wl,--exclude-libs,ALL -Wl,--no-undefined -o '$OUT/$SO'
+     strip '$OUT/$SO'
+     echo \"exported: \$(readelf --dyn-syms -W '$OUT/$SO' | grep -E ' GLOBAL .* [0-9]+ [A-Za-z]' | grep -v UND | awk '{print \$8}' | tr '\n' ' ')\"
+     echo \"highest glibc: \$(readelf -V '$OUT/$SO' | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1) (device has 2.39)\"
+@@ -99,7 +99,7 @@ for t in $TARGETS; do
+   case "$t" in
+     armv7)   build_target arm32v7/gcc:11-bullseye linux/arm/v7 "$CFLAGS_ARM" "$PORT/build" ;;
+     # aarch64: Gen2 runs MPC OS 3.x only (glibc 2.39), so bookworm (2.36) is fine; no 2.x ceiling to respect
+-    aarch64) build_target arm64v8/gcc:12-bookworm linux/arm64 "$CFLAGS_A64" "$PORT/build/aarch64" ;;
++    aarch64) build_target "${MPC_BUILD_IMAGE_AARCH64:-arm64v8/gcc:12-bookworm}" linux/arm64 "$CFLAGS_A64" "$PORT/build/aarch64" ;;
+     *) echo "unknown target $t" >&2; exit 1 ;;
+   esac
+ done
 diff --git a/tools/release.py b/tools/release.py
-index e79afe5..ed13896 100644
+index 1565d42..78214df 100644
 --- a/tools/release.py
 +++ b/tools/release.py
-@@ -126,47 +126,54 @@ def elf_machine(path):
+@@ -136,47 +136,66 @@ def elf_machine(path):
      arch = {40: "armv7", 62: "x86_64", 183: "aarch64", 3: "x86"}.get(int.from_bytes(d[18:20], "little"), "unknown")
      return arch if arch != "armv7" or d[4:6] == b"\x01\x01" else "unknown"   # ARM, but not 32-bit little-endian
  
@@ -58,9 +86,20 @@ index e79afe5..ed13896 100644
  
 -{requirements}
 +- {os_label} on a {device_class} MPC standalone device ({architecture}).
-+- Installation runs with root privileges, provided by Plugin Manager USB or an existing privileged shell.
 +{requires_md}
-+## Install with Plugin Manager USB
++## Install on MPC OS 3.10.1 or later
++
++1. Extract the ZIP and copy `portable/{skin}/` into `VST2 Plugins` at the root of your USB drive or SD card.
++2. In MPC Preferences, open **Enhancements (Beta)** and enable **Enable Enhancements** and **External Plugin Support**.
++3. Select **{name}** under **External Plugins** in the plugin browser.
++
++No helper, shell access or settings-file edit is needed for this installation.
++The separate SDK-format ZIP contains the same ready-to-copy plugin folder directly at its root.
++
++To remove it, unload the plugin and delete its folder from `VST2 Plugins`.
++Keep any personal files you added before deleting the folder.
++
++## Install on earlier MPC OS versions
  
 -## Install (scripted)
 +1. Prepare the [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc) drive following its instructions.
@@ -70,6 +109,7 @@ index e79afe5..ed13896 100644
 -1. Unzip, then copy the whole folder to the device, e.g. `scp -r {top} root@<device-ip>:/tmp/`
 -2. Run it: `ssh root@<device-ip> sh /tmp/{top}/install.sh{install_args}`
 +Save your project first. The manager supplies the root privileges needed by the package installer.
++The following scripted instructions apply to this earlier-firmware route.
  
 -The installer checks the device, **stops MPC** (save your project first), copies `portable/{skin}/` (the plugin, its skin
 -and its data, as one folder) into `{synths}`, backs up `MPC.settings`, adds the plugin to MPC's plugin list from the
@@ -78,7 +118,7 @@ index e79afe5..ed13896 100644
  folder's `plugin-meta.xml` and starts MPC again. Running it again upgrades in place, keeping your own files.
  An older install of this plugin (the previous layout, with the `.so` in `/sdcard/vst`) is replaced, not duplicated.
  `-y` skips the confirmation prompt; `-t <folder>` installs into another Synths folder (for example on a card).
-@@ -174,17 +181,29 @@ An older install of this plugin (the previous layout, with the `.so` in `/sdcard
+@@ -184,17 +203,29 @@ An older install of this plugin (the previous layout, with the `.so` in `/sdcard
  Then add **{name}** to a track from the plugin browser ({where}). Its screen appears in the plugin view,
  and the Q-Links follow the page.
  
@@ -111,7 +151,7 @@ index e79afe5..ed13896 100644
  4. In `MPC.settings`, inside `<VALUE name="{listkey}"><KNOWNPLUGINS>`, add the line from `plugin-meta.xml` with
     `%payload-path%` replaced by `{synths}`. If there is no `{listkey}` value yet, add one just before `</PROPERTIES>`:
     ```xml
-@@ -203,8 +222,8 @@ rebuild the whole plugin list from the plugin folders in `Synths` keep this plug
+@@ -213,8 +244,8 @@ rebuild the whole plugin list from the plugin folders in `Synths` keep this plug
  
  See `SHA256SUMS`. Made with [mpc-vst-plugins](https://github.com/open-mpc/mpc-vst-plugins).
  """.format(name=name, ver=a.version, about=(a.about + "\n\n") if a.about else "", kind=kind, top=top, so=so_name,
@@ -122,7 +162,7 @@ index e79afe5..ed13896 100644
             where="Instrument plugins" if kind == "instrument" else "Insert effects")
  open(os.path.join(root, "INSTALL.md"), "w").write(install_md)
  
-@@ -218,20 +237,6 @@ def walk(top):
+@@ -228,20 +259,6 @@ def walk(top):
              yield os.path.join(d, f)
  
  
@@ -140,11 +180,11 @@ index e79afe5..ed13896 100644
 -    os_compat, os_why = ["3.x"], ["Gen2 runs MPC OS 3.x only"]
 -print("MPC OS compatibility: %s%s" % (" and ".join(os_compat), "" if "2.x" in os_compat else " only (not 2.x: %s)" % "; ".join(os_why[:2])))
 -
- plugin_id = a.id or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
- if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", plugin_id):
-     raise SystemExit("--id must be lowercase letters, digits and hyphens")
-@@ -253,7 +258,7 @@ manifest = {
-     "user_data": a.user_data,
+ for problem in deps.check_lists(a.depends, a.conflicts, plugin_id):
+     raise SystemExit("--depends/--conflicts: " + problem)
+ manifest = {
+@@ -261,7 +278,7 @@ manifest = {
+     "retire": a.retire,
      "user_files": user_files,
      "arch": elf_machine(a.so),
 -    "max_glibc": max_glibc(a.so),
