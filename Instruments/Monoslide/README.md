@@ -52,7 +52,7 @@ Copy its `Twisted Cable - VST - MonoSlide` folder into `VST2 Plugins` at the roo
 In Preferences → Enhancements (Beta), enable **Enable Enhancements** and **External Plugin Support**.<br>
 Restart the MPC application if the plugin is not listed, then choose MonoSlide under **External Plugins**.
 
-On earlier supported firmware, install the appropriate ARMv7 or AArch64 ZIP through the [OpenMPC Plugin Manager](https://github.com/open-mpc/mpc-vst-plugins/tree/main/tools/plugin_manager_g2) or your existing [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc).<br>
+On earlier supported firmware, install the appropriate ARMv7 or AArch64 ZIP through the [OpenMPC Plugin Manager](https://github.com/open-mpc/plugin-manager) or your existing [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc).<br>
 The scripted installer restarts the MPC application; save your project first.
 
 ## Local validation

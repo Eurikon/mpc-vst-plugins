@@ -29,7 +29,7 @@ That project established the standalone plugin build, package and community cata
 Each plugin is packaged and submitted to the community catalog separately.<br>
 Release assets use plugin-specific names; source updates do not publish a new installer automatically.<br>
 On MPC OS 3.10.1 or later, copy the SDK-format plugin folder into `VST2 Plugins` at the root of a drive.<br>
-The [OpenMPC Plugin Manager](https://github.com/open-mpc/mpc-vst-plugins/tree/main/tools/plugin_manager_g2) also installs community releases.<br>
+The [OpenMPC Plugin Manager](https://github.com/open-mpc/plugin-manager) also installs community releases.<br>
 Existing [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc) installations remain an option on earlier supported firmware.
 
 ## Licensing

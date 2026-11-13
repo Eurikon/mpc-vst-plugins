@@ -54,7 +54,7 @@ Copy its `Twisted Cable - VST - HexChord 73` folder into `VST2 Plugins` at the r
 In Preferences → Enhancements (Beta), enable **Enable Enhancements** and **External Plugin Support**.<br>
 Restart the MPC application if needed, then select HexChord 73 under **External Plugins** on a Plugin track.
 
-On earlier supported firmware, install the appropriate ARMv7 or AArch64 ZIP through the [OpenMPC Plugin Manager](https://github.com/open-mpc/mpc-vst-plugins/tree/main/tools/plugin_manager_g2) or your existing [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc).<br>
+On earlier supported firmware, install the appropriate ARMv7 or AArch64 ZIP through the [OpenMPC Plugin Manager](https://github.com/open-mpc/plugin-manager) or your existing [Plugin Manager USB](https://github.com/Eurikon/plugin-manager-usb-for-open-mpc).<br>
 Save your project before scripted installation restarts MPC.
 
 ## Build and test

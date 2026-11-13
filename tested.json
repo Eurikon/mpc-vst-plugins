@@ -54,5 +54,12 @@
     "device": "MPC Live II Retro",
     "firmware": "3.10.1",
     "date": "2026-11-13"
+  },
+  {
+    "id": "hexachord-73",
+    "version": "1.0.2",
+    "device": "MPC Live II Retro",
+    "firmware": "3.10.1",
+    "date": "2026-11-13"
   }
 ]

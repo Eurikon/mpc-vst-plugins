@@ -2,7 +2,7 @@
   "commit": "0dc17120cd7e952e95eeecdd820ac9e495a75ee9",
   "patched_files": {
     "tools/gen_vst.py": "cc942856a96eb709ae3afc92116cc242801cd61600c6c733a53f5524bb4fa1dd",
-    "tools/release.py": "67d8ab2a520f2443fd269008c984acd78044b8560bdfa33c7ac2dc58d28240d2",
+    "tools/release.py": "2a19ee12f464b649381bd132ac5e58e126b53eb909570c128333af56aa6425e5",
     "tools/shadow_skin.py": "3474fcdf5ec311ed57a022676d03dee1109c8568e04fe6fd34e5cc66ea3feedf",
     "wrapper/vst2_wrap.c": "b5861a9945dbc4b3b8bb48e6dfa7748c84ae8ce34dd6f279e36d1b7b3658373d",
     "wrapper/engine.h": "a3fb54742ef329d320e6ee26644a6f4c6e51e60f4d193aea0fc1ce43c56eb584",

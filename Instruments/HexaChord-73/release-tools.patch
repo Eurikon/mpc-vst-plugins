@@ -27,7 +27,7 @@ index c4121f9..672daf6 100755
    esac
  done
 diff --git a/tools/release.py b/tools/release.py
-index 1565d42..78214df 100644
+index 1565d42..34a8b72 100644
 --- a/tools/release.py
 +++ b/tools/release.py
 @@ -136,47 +136,66 @@ def elf_machine(path):
@@ -192,3 +192,12 @@ index 1565d42..78214df 100644
      "os_compat": os_compat,
      "param_compat": int(a.version.split(".")[0]),
      "about": a.about,
+@@ -278,7 +295,7 @@ manifest = {
+ if manifest["arch"] in ("armv7", "aarch64"):
+     if not re.fullmatch(r"[0-9a-fA-F]{1,8}", attr["uid"]):
+         raise SystemExit("the plugin-list entry's uid must be hex for plugin.json: %r" % attr["uid"])
+-    pj = {"name": name, "manufacturer": attr["manufacturer"], "version": a.version,
++    pj = {"format": "vst2", "name": name, "manufacturer": attr["manufacturer"], "version": a.version,
+           "kind": "effect" if kind == "effect" else "instrument", "uid": "0x%08x" % int(attr["uid"], 16),
+           "category": attr.get("category") or ("Effect" if kind == "effect" else "Synth"),
+           "numInputs": int(attr.get("numInputs", "2" if kind == "effect" else "0")), "numOutputs": int(attr.get("numOutputs", "2")),
