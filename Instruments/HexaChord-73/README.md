@@ -2,7 +2,7 @@
 
 [![Build checks](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/hexchord-check.yml/badge.svg?branch=main)](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/hexchord-check.yml)
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Download 1.0.1](https://img.shields.io/badge/Download-1.0.1-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/hexachord-73-v1.0.1/HexChord-73-1.0.1-mpc-armv7.zip)
+[![Download 1.0.2](https://img.shields.io/badge/Download-1.0.2-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/hexachord-73-v1.0.2/HexChord-73-1.0.2-mpc-armv7.zip)
 
 ![HexChord 73 Perform page](../../media/hexachord-73.png)
 
