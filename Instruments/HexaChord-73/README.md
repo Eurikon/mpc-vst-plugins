@@ -10,7 +10,7 @@ HexChord 73 is a stereo chord synthesizer for MPC standalone.<br>
 Play one note to trigger a four-tone chord, with four overlapping chord slots and release tails.<br>
 Choose from eight chords, four voicings and four synth engines: Felt 73, Ana 78, Poly DCO Pulse and Prism Bell.
 
-**Version:** 1.0.2, with ARMv7 and AArch64 builds for MPC OS 3.x.
+**Version:** 1.0.3, with ARMv7 and AArch64 builds for MPC OS 3.x.
 
 | Engine | Sound |
 | --- | --- |
@@ -47,6 +47,8 @@ The original sd88me CPU workload measured **p99 22.5%, maximum block 23.5%: WARN
 Start with one or two instances and check the MPC project CPU meter.<br>
 These figures measure one core's audio-block budget, rather than the overall CPU meter.
 
+Release 1.0.3 corrects installation packaging; the synth binaries are unchanged from 1.0.2.
+
 ## Installation
 
 On **MPC OS 3.10.1 or later**, extract the SDK-format ZIP.<br>
@@ -72,7 +74,7 @@ cd mpc-vst-plugins/Instruments/HexaChord-73
 bash test.sh
 bash build.sh skin
 bash build.sh
-bash package.sh 1.0.2
+bash package.sh 1.0.3
 ```
 
 `test.sh` runs the native engine and VST host tests with ASan/UBSan.<br>

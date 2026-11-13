@@ -201,3 +201,29 @@ index 1565d42..34a8b72 100644
            "kind": "effect" if kind == "effect" else "instrument", "uid": "0x%08x" % int(attr["uid"], 16),
            "category": attr.get("category") or ("Effect" if kind == "effect" else "Synth"),
            "numInputs": int(attr.get("numInputs", "2" if kind == "effect" else "0")), "numOutputs": int(attr.get("numOutputs", "2")),
+diff --git a/tools/release/install.sh b/tools/release/install.sh
+index a35ea94..7d26687 100644
+--- a/tools/release/install.sh
++++ b/tools/release/install.sh
+@@ -128,7 +128,7 @@ mv "$STAGE" "$NEW"
+ rm -rf "$OLD"
+ 
+ # 2. the plugin-list entry: %payload-path% is the Synths folder; entries with the same file= or uid are replaced
+-BAK="$SETTINGS.bak-$(echo "$SO" | sed 's/\.so$//')-$(date +%Y%m%d-%H%M%S)"
++BAK="$SETTINGS.bak-$(basename "$SO" .so)-$(date +%Y%m%d-%H%M%S)"
+ cp "$SETTINGS" "$BAK"
+ sed "s|%payload-path%|$SYNTHS_SED|g" "portable/$SKIN/plugin-meta.xml" > "$SETTINGS.entry"
+ awk -v mode=add -v file="$FILE" -v alt="$LEGACY_SO" -v uid="$UID_HEX" -v entryfile="$SETTINGS.entry" -v listkey="$LISTKEY" -f plugin_list.awk "$SETTINGS" > "$SETTINGS.new"
+diff --git a/tools/release/uninstall.sh b/tools/release/uninstall.sh
+index 14aca48..2fc8094 100644
+--- a/tools/release/uninstall.sh
++++ b/tools/release/uninstall.sh
+@@ -54,7 +54,7 @@ else
+     fi
+ fi
+ 
+-BAK="$SETTINGS.bak-$(echo "$SO" | sed 's/\.so$//')-$(date +%Y%m%d-%H%M%S)"
++BAK="$SETTINGS.bak-$(basename "$SO" .so)-$(date +%Y%m%d-%H%M%S)"
+ cp "$SETTINGS" "$BAK"
+ awk -v mode=remove -v file="$FILE" -v alt="$LEGACY_SO" -v uid="$UID_HEX" -f plugin_list.awk "$SETTINGS" > "$SETTINGS.new"
+ n=$(grep -c " uid=\"$UID_HEX\"" "$SETTINGS.new" || true)

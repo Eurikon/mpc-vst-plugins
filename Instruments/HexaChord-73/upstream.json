@@ -7,6 +7,8 @@
     "wrapper/vst2_wrap.c": "b5861a9945dbc4b3b8bb48e6dfa7748c84ae8ce34dd6f279e36d1b7b3658373d",
     "wrapper/engine.h": "a3fb54742ef329d320e6ee26644a6f4c6e51e60f4d193aea0fc1ce43c56eb584",
     "tools/test_port.sh": "70a00228034fd3c29891e34ddb2c561d1dad46e5f3ea7ec3969d267fae571561",
-    "tools/build_port.sh": "6b40113167d238c22810f347959447606527396ba789745074e8fa8da320d778"
+    "tools/build_port.sh": "6b40113167d238c22810f347959447606527396ba789745074e8fa8da320d778",
+    "tools/release/install.sh": "fdfc6f931389a2e5c27b37b0e2557b2c324d08ef97856b790192b5420acfb200",
+    "tools/release/uninstall.sh": "6b90c7f7ade4752b70a39b44656c049969ecc7425d01024af858ecf5bff4cf99"
   }
 }
