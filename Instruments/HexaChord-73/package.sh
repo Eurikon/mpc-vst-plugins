@@ -6,6 +6,17 @@ export MPC_VST="$(cd "${MPC_VST:-../../toolchain/upstream}" && pwd)"
 version="${1:?Usage: ./package.sh X.Y.Z [OUTPUT_DIR]}"
 [[ $# -le 2 && "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Expected X.Y.Z [OUTPUT_DIR]' >&2; exit 1; }
 output="${2:-dist}"
+python3 - "$version" <<'PYVERSION'
+from pathlib import Path
+import sys
+import xml.etree.ElementTree as ET
+path = Path('build/skin/Twisted Cable - VST - HexChord 73/version.xml')
+tree = ET.parse(path)
+version = tree.getroot().find('version')
+assert version is not None, 'Skin content version is missing'
+version.text = sys.argv[1] + '.0'
+tree.write(path, encoding='utf-8', xml_declaration=True)
+PYVERSION
 export HEXCHORD_INSTANCE_NOTE="${HEXCHORD_INSTANCE_NOTE:-CPU verdict WARN: start with one or two instances and check the MPC project CPU meter.}"
 test -f build/hexachord-73.so
 test -f bench.txt
