@@ -90,6 +90,8 @@
 !/Instruments/HexaChord-73/src/native_envelope.hpp
 !/Instruments/HexaChord-73/src/native_filters.hpp
 !/Instruments/HexaChord-73/src/native_math.hpp
+!/Instruments/HexaChord-73/src/native_fm.hpp
+!/Instruments/HexaChord-73/src/native_fp.h
 !/Instruments/HexaChord-73/src/vst_ui_wrap.c
 !/Instruments/HexaChord-73/licenses/AssemblyScript-Apache-2.0.txt
 !/Instruments/HexaChord-73/licenses/AssemblyScript-NOTICE.txt

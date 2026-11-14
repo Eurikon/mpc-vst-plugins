@@ -1,6 +1,7 @@
 #pragma once
 
 #include "native_math.hpp"
+#include <algorithm>
 
 namespace hexachord::native {
 
@@ -10,15 +11,6 @@ struct ADSRShape {
     float sustainLevel = 1.f;
     float releaseMult = .999f;
 
-    void set(float attackMs, float decayMs, float sustain, float releaseMs, float sampleRate) {
-        const float attackSamples = max(attackMs * .001f * sampleRate, 1.f);
-        attackInc = 1.f / attackSamples;
-        const float decaySamples = max(decayMs * .001f * sampleRate, 1.f);
-        decayMult = exp(-1.f / decaySamples);
-        sustainLevel = clamp(sustain, 0.f, 1.f);
-        const float releaseSamples = max(releaseMs * .001f * sampleRate, 1.f);
-        releaseMult = exp(-1.f / releaseSamples);
-    }
 };
 
 class ADSR {
@@ -34,6 +26,13 @@ public:
         else if (stage_ != 0) stage_ = 4;
     }
     int render(float* buffer, int frames) {
+        if (frames <= 0) return 0;
+        if (stage_ == 0) { std::fill_n(buffer, frames, value_); return 0; }
+        if (stage_ == 3) {
+            value_ = sustainLevel_;
+            std::fill_n(buffer, frames, value_);
+            return frames;
+        }
         int stage = stage_;
         float value = value_;
         const float attackInc = attackInc_, decayMult = decayMult_;
@@ -51,6 +50,8 @@ public:
                 if (std::fabs(value - sustainLevel) < .0005f) {
                     value = sustainLevel;
                     stage = 3;
+                    std::fill(buffer + i, buffer + frames, value);
+                    break;
                 }
             } else if (stage == 3) {
                 value = sustainLevel;

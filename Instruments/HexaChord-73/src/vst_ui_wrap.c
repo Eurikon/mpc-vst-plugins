@@ -5,7 +5,9 @@
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "hexachord_params.h"
+#include "native_fp.h"
 
 struct AEffect;
 static void setParameter(struct AEffect *, int32_t, float);
@@ -13,6 +15,8 @@ static intptr_t dispatcher(struct AEffect *, int32_t, int32_t, intptr_t, void *,
 static void process(struct AEffect *, float **, float **, int32_t);
 static void processReplacing(struct AEffect *, float **, float **, int32_t);
 static void *hexachord_allocate(size_t, size_t);
+int hexachord_snprintf(char *, size_t, const char *, ...);
+int hexachord_chord_pending(void *);
 
 // Function-like aliases preserve the shared entry and ABI fields while intercepting UI writes.
 #define setParameter(...) hexachord_base_setParameter(__VA_ARGS__)
@@ -20,7 +24,9 @@ static void *hexachord_allocate(size_t, size_t);
 #define process(...) hexachord_base_process(__VA_ARGS__)
 #define processReplacing(...) hexachord_base_processReplacing(__VA_ARGS__)
 #define calloc(...) hexachord_allocate(__VA_ARGS__)
+#define snprintf(...) hexachord_snprintf(__VA_ARGS__)
 #include "vst2_wrap.c"
+#undef snprintf
 #undef calloc
 #undef processReplacing
 #undef process
@@ -91,8 +97,7 @@ static void setParameter(AEffect *effect, int32_t index, float value) {
 
 static void applyChordPad(AEffect *effect) {
     wrap_t *instance = effect->object;
-    char pending[2];
-    if (eng_get(instance, "ChordPadPending", pending, sizeof pending) <= 0 || pending[0] != '1') return;
+    if (!hexachord_chord_pending(instance->dsp)) return;
     const float before[] = {get_norm(instance, 0), get_norm(instance, 1)};
     eng_set(instance, "ChordPadApply", "1");
     for (int parameter = 0; parameter < 2; ++parameter) {
@@ -106,15 +111,19 @@ static void applyChordPad(AEffect *effect) {
 }
 
 static void process(AEffect *effect, float **inputs, float **outputs, int32_t frames) {
+    const uint64_t fp = hexachord_fp_enter();
     if (frames > 0) atomic_store_explicit(&((hexachord_wrap_t *)effect->object)->restoring, 0, memory_order_release);
     applyChordPad(effect);
     hexachord_base_process(effect, inputs, outputs, frames);
+    hexachord_fp_restore(fp);
 }
 
 static void processReplacing(AEffect *effect, float **inputs, float **outputs, int32_t frames) {
+    const uint64_t fp = hexachord_fp_enter();
     if (frames > 0) atomic_store_explicit(&((hexachord_wrap_t *)effect->object)->restoring, 0, memory_order_release);
     applyChordPad(effect);
     hexachord_base_processReplacing(effect, inputs, outputs, frames);
+    hexachord_fp_restore(fp);
 }
 
 static intptr_t dispatcher(AEffect *effect, int32_t operation, int32_t index,

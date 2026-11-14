@@ -5,9 +5,14 @@ uint64_t hexachord_test_memory_bytes(void*);
 void* hexachord_test_memory_address(void*);
 unsigned hexachord_test_parameter_snapshots(void*);
 float hexachord_test_applied_param(void*, int);
+int16_t hexachord_test_pcm(float);
+int hexachord_test_number(const char*, float*);
+int hexachord_chord_pending(void*);
 }
 #include "hexachord_params.h"
 #include <atomic>
+#include <cerrno>
+#include <cfenv>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -15,6 +20,9 @@ float hexachord_test_applied_param(void*, int);
 #include <string>
 #include <sstream>
 #include <thread>
+#include <limits>
+
+extern "C" int hexachord_snprintf(char*, size_t, const char*, ...);
 
 namespace {
 const mpc_engine_t* api = nullptr;
@@ -76,6 +84,106 @@ void appliedParameters(void* engine) {
         require(hexachord_test_applied_param(engine, i) == physical(i, value(engine, hexachord::parameters[i].key)),
                 "Published parameter did not reach native DSP");
 }
+void decimalParsing() {
+    const int previous = std::fegetround();
+    uint32_t seed = 0x731a;
+    for (int mode : {FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZERO}) {
+        require(std::fesetround(mode) == 0, "Cannot select decimal rounding mode");
+        for (int i = 0; i < 65536; ++i) {
+            seed = seed * 1664525u + 1013904223u;
+            char encoded[64];
+            std::snprintf(encoded, sizeof encoded, "%s%u.%06u", i & 1 ? "-" : "", seed % 10, (seed >> 1) % 1000000);
+            errno = 0;
+            const float expected = std::strtof(encoded, nullptr);
+            const int expectedError = errno;
+            float actual = 0;
+            require(hexachord_test_number(encoded, &actual) == 1, "Decimal parser rejected a valid number");
+            require(!std::memcmp(&actual, &expected, sizeof actual) && errno == expectedError, "Decimal parsing changed value or errno");
+        }
+    }
+    require(std::fesetround(previous) == 0, "Cannot restore decimal rounding mode");
+}
+void numericFormatting() {
+    const int previous = std::fegetround();
+    uint32_t seed = 0x7318;
+    for (int mode : {FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZERO}) {
+        require(std::fesetround(mode) == 0, "Cannot select formatter rounding mode");
+        for (int i = 0; i < 32768; ++i) {
+            seed = seed * 1664525u + 1013904223u;
+            float value;
+            std::memcpy(&value, &seed, sizeof value);
+            for (size_t capacity : {size_t(0), size_t(1), size_t(3), size_t(64)}) {
+                char expected[64], actual[64];
+                std::memset(expected, 0x5a, sizeof expected);
+                std::memset(actual, 0x5a, sizeof actual);
+                const int length = std::snprintf(expected, capacity, "%g", double(value));
+                const int actualLength = hexachord_snprintf(actual, capacity, "%g", double(value));
+                if (actualLength != length || std::memcmp(actual, expected, sizeof actual))
+                    std::fprintf(stderr, "Formatting %a: mode %d, capacity %zu, lengths %d/%d, text [%s]/[%s]\n",
+                                 value, mode, capacity, actualLength, length, capacity ? actual : "", capacity ? expected : "");
+                require(actualLength == length, "Wrapper formatter changed result length");
+                require(!std::memcmp(actual, expected, sizeof actual), "Wrapper formatter changed text or buffer bounds");
+            }
+        }
+    }
+    for (long value : {std::numeric_limits<long>::min(), -1L, 0L, 1L, std::numeric_limits<long>::max()}) {
+        char expected[64], actual[64];
+        const int length = std::snprintf(expected, sizeof expected, "%ld", value);
+        require(hexachord_snprintf(actual, sizeof actual, "%ld", value) == length && !std::strcmp(actual, expected),
+                "Wrapper integer formatting changed");
+    }
+    char fallback[64];
+    require(hexachord_snprintf(fallback, sizeof fallback, "%s:%04d", "value", 7) == 10 &&
+                !std::strcmp(fallback, "value:0007"), "Wrapper fallback formatting changed");
+    require(std::fesetround(previous) == 0, "Cannot restore formatter rounding mode");
+}
+void sampleRounding() {
+    const int previous = std::fegetround();
+    for (int mode : {FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZERO}) {
+        require(std::fesetround(mode) == 0, "Cannot select PCM rounding mode");
+        for (int integer = -32768; integer < 32767; ++integer) {
+            const float tie = (float(integer) + .5f) / 32768.f;
+            for (float sample : {tie, std::nextafter(tie, -INFINITY), std::nextafter(tie, INFINITY)})
+                require(hexachord_test_pcm(sample) == int16_t(std::lrintf(sample * 32768.f)), "PCM conversion changed rounding");
+        }
+        for (float sample : {-INFINITY, -2.f, -1.f, 1.f, 2.f, INFINITY, NAN}) {
+            const int16_t expected = !std::isfinite(sample) ? 0 : sample <= -1.f ? -32768 : 32767;
+            require(hexachord_test_pcm(sample) == expected, "PCM conversion changed clipping or nonfinite handling");
+        }
+    }
+    require(std::fesetround(previous) == 0, "Cannot restore PCM rounding mode");
+}
+void numericText() {
+    void* engine = api->create(nullptr);
+    require(engine != nullptr, "Numeric protocol instance");
+    uint32_t random = 0x7314;
+    for (const auto& parameter : hexachord::parameters) {
+        const float low = parameter.curve == hexachord::Curve::Linear ? parameter.minimum : 0.f;
+        const float high = parameter.curve == hexachord::Curve::Linear ? parameter.maximum : 1.f;
+        for (int sample = 0; sample < 256; ++sample) {
+            random = random * 1664525u + 1013904223u;
+            float expected = low + (high - low) * (float(random >> 8) / 16777216.f);
+            if (parameter.stepped) expected = std::round(expected);
+            char encoded[64]; std::snprintf(encoded, sizeof encoded, "%.9g", expected);
+            api->set_param(engine, parameter.key, encoded);
+            require(text(engine, parameter.key) == encoded, "Numeric formatter changed protocol text");
+        }
+    }
+    float expected = value(engine, "OutputGain");
+    for (const char* input : {"+7", "-0", "0000012", "1234567", "12345678", "1e1", " 4", "4 ",
+                              "--1", "0.00000000001", "nan", "1e-50", "inf", ""}) {
+        errno = 0; char* end = nullptr;
+        const float parsed = std::strtof(input, &end);
+        if (end != input && !*end && errno != ERANGE && std::isfinite(parsed))
+            expected = std::fmax(-60.f, std::fmin(12.f, parsed));
+        api->set_param(engine, "OutputGain", input);
+        char encoded[64]; std::snprintf(encoded, sizeof encoded, "%.9g", expected);
+        require(text(engine, "OutputGain") == encoded, "Numeric parser changed acceptance or rounding");
+        char tiny[1] = {'x'};
+        require(api->get_param(engine, "OutputGain", tiny, 1) == 0 && tiny[0] == 0, "Short numeric buffer changed");
+    }
+    api->destroy(engine);
+}
 void parameterRevision(void* engine, void* other) {
     const auto original = state(engine);
     const unsigned initial = hexachord_test_parameter_snapshots(engine);
@@ -89,6 +197,9 @@ void parameterRevision(void* engine, void* other) {
     appliedParameters(engine);
     energy(engine, 20);
     require(hexachord_test_parameter_snapshots(engine) == initial + 1, "Applied scalar repeated snapshots");
+    api->set_param(engine, "Cutoff", ".37");
+    energy(engine, 1);
+    require(hexachord_test_parameter_snapshots(engine) == initial + 1, "Repeated scalar write forced another snapshot");
     api->set_param(engine, "Cutoff", "nan");
     energy(engine, 1);
     require(hexachord_test_parameter_snapshots(engine) == initial + 1, "Invalid scalar published a revision");
@@ -263,7 +374,9 @@ void chordPad(void* a, void* b) {
                 padPoint(a, x, y, reverse);
                 require(state(a) == before, "One-axis writes escaped before pair commit");
                 require(value(a, "ChordPadPending") == 1, "XY pair was not staged");
+                require(hexachord_chord_pending(a) == 1, "Native pending read missed a staged gesture");
                 api->set_param(a, "ChordPadApply", "1");
+                require(hexachord_chord_pending(a) == 0, "Native pending read retained an applied gesture");
                 require(value(a, "ChordType") == chord && value(a, "Inversion") == inversion,
                         "Polar XY chord or voicing selection is incorrect");
                 require(state(a) == expected, "XY gesture altered non-chord DSP state or chunk format");
@@ -329,6 +442,10 @@ int main() {
     require(storageA && storageB && storageA != storageB, "Native storage is not independently owned");
     silent(a);
     silent(b);
+    decimalParsing();
+    sampleRounding();
+    numericText();
+    numericFormatting();
     parameterRevision(a, b);
     displays(a);
     engineState(a, b);

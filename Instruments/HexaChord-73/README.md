@@ -2,7 +2,7 @@
 
 [![Build checks](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/hexchord-check.yml/badge.svg?branch=main)](https://github.com/Eurikon/mpc-vst-plugins/actions/workflows/hexchord-check.yml)
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Download 1.0.3](https://img.shields.io/badge/Download-1.0.3-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/hexachord-73-v1.0.3/HexChord-73-1.0.3-mpc-armv7.zip)
+[![Download 1.1.0](https://img.shields.io/badge/Download-1.1.0-brightgreen?logo=github)](https://github.com/Eurikon/mpc-vst-plugins/releases/download/hexachord-73-v1.1.0/HexChord-73-1.1.0-mpc-armv7.zip)
 
 ![HexChord 73 Perform page](../../media/hexachord-73.png)
 
@@ -10,7 +10,7 @@ HexChord 73 is a stereo chord synthesizer for MPC standalone.<br>
 Play one note to trigger a four-tone chord, with four overlapping chord slots and release tails.<br>
 Choose from eight chords, four voicings and four synth engines: Felt 73, Ana 78, Poly DCO Pulse and Prism Bell.
 
-**Version:** 1.0.3, with ARMv7 and AArch64 builds for MPC OS 3.x.
+**Version:** 1.1.0, with ARMv7 and AArch64 builds for MPC OS 3.x.
 
 | Engine | Sound |
 | --- | --- |
@@ -37,17 +37,18 @@ Effects include chorus, tape wow, stereo tape echo and a bright feedback delay.
 
 **Tested on:** MPC Live 2 Retro — Gen1 / AKAI MPC OS 3.9.1, 3.10 and 3.10.1.<br>
 Earlier firmware checks used previous releases.<br>
-The SDK migration's loading, playback, controls and all three pages were checked on OS 3.10.1.<br>
-The 3.10.1 project save/reload recheck is deferred to the next update.<br>
+Version 1.1.0 was checked for loading, playback, controls, all three pages and project save/reload on OS 3.10.1.<br>
 Gen2 builds pass ARM64 Linux host, sanitizer and repeated-unload checks; physical Gen2 testing remains pending.
 The release ZIP passed all 24 offline installation/reinstallation/tamper/rollback/uninstallation checks.<br>
-Official-format installation and removal were verified on OS 3.10.1 on 13-11-2026, with all 341 installed files checked by SHA-256 and unrelated files preserved.
+The official-format installation contains 341 files, verified by SHA-256 on MPC SD.
 
-The original sd88me CPU workload measured **p99 22.5%, maximum block 23.5%: WARN** on OS 3.10.1.<br>
-Start with one or two instances and check the MPC project CPU meter.<br>
+The original upstream CPU workload measured **p99 13.7%, maximum block 17.4%: PASS** on OS 3.10.1.<br>
 These figures measure one core's audio-block budget, rather than the overall CPU meter.
 
-Release 1.0.3 corrects installation packaging; the synth binaries are unchanged from 1.0.2.
+Version 1.1.0 optimizes the native DSP following the Akai SDK performance guidance.<br>
+Four-trigger playing uses approximately 29% less CPU for Ana, 54% for Felt, 25% for Poly and 45% for Prism in matched device tests.<br>
+The interface, voice count, parameters and preset format are unchanged.<br>
+Additional 32-frame stress tests still exceed the stricter local CPU targets; they are separate from the upstream PASS benchmark.
 
 ## Installation
 
@@ -74,7 +75,7 @@ cd mpc-vst-plugins/Instruments/HexaChord-73
 bash test.sh
 bash build.sh skin
 bash build.sh
-bash package.sh 1.0.3
+bash package.sh 1.1.0
 ```
 
 `test.sh` runs the native engine and VST host tests with ASan/UBSan.<br>

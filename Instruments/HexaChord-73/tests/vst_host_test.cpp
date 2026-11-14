@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cfenv>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -8,6 +9,10 @@
 #include <vector>
 #include "params.h"
 #include "hexachord_params.h"
+#include "native_fm.hpp"
+#include "native_fp.h"
+#include "native_filters.hpp"
+#include "native_envelope.hpp"
 
 struct AEffect;
 using Host = intptr_t (*)(AEffect*, int32_t, int32_t, intptr_t, void*, float);
@@ -42,6 +47,199 @@ bool settingUi = false, reenteredUi = false;
 int displayUpdates = 0;
 void require(bool condition, const char* message) {
     if (!condition) { std::fprintf(stderr, "%s\n", message); std::abort(); }
+}
+void vectorMath() {
+    const int rounding = std::fegetround();
+    for (int mode : {FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZERO}) {
+        require(std::fesetround(mode) == 0, "Cannot select sample rounding mode");
+        for (int integer = -32768; integer < 32767; ++integer) {
+            const float tie = float(integer) + .5f;
+            for (float input : {tie, std::nextafter(tie, -INFINITY), std::nextafter(tie, INFINITY)})
+                require(hexachord_round_sample(input) == std::lrintf(input), "Native sample rounding changed output");
+        }
+    }
+    require(std::fesetround(rounding) == 0, "Cannot restore sample rounding mode");
+#if defined(__ARM_NEON) && !defined(HEXACHORD_SCALAR_FM)
+    using namespace hexachord::native;
+    uint32_t seed = 0x731a;
+    auto random = [&] { seed = seed * 1664525u + 1013904223u; return float(seed >> 8) / 16777216.f; };
+    for (int iteration = 0; iteration < 131072; ++iteration) {
+        float numerator[4], actual[4], expected[4];
+        const float denominator = iteration % 2 ? 2.f * PI : 8000.f + random() * 88000.f;
+        for (int lane = 0; lane < 4; ++lane) {
+            numerator[lane] = (random() - .5f) * 0x1p+24f;
+            if (iteration % 4 == 0) numerator[lane] = std::nextafter(denominator * numerator[lane], 0.f);
+            expected[lane] = numerator[lane] / denominator;
+        }
+        vst1q_f32(actual, fm::divide(vld1q_f32(numerator), fm::splat(denominator)));
+        require(!std::memcmp(actual, expected, sizeof actual), "Vector lane division changed rounded output");
+        vst1q_f32(actual, fm::divideConstant(vld1q_f32(numerator), denominator, 1.0 / double(denominator)));
+        require(!std::memcmp(actual, expected, sizeof actual), "Constant division changed rounded output");
+        for (int lane = 0; lane < 4; ++lane)
+            require(cachedAudioQuotient(numerator[lane], denominator, 1.0 / double(denominator)) == expected[lane],
+                    "Scalar cached division changed rounded output");
+        float divisors[4];
+        for (int lane = 0; lane < 4; ++lane) {
+            divisors[lane] = (random() - .5f) * 65536.f;
+            if (divisors[lane] == 0.f) divisors[lane] = -0.f;
+            expected[lane] = numerator[lane] / divisors[lane];
+        }
+        vst1q_f32(actual, fm::divide(vld1q_f32(numerator), vld1q_f32(divisors)));
+        require(!std::memcmp(actual, expected, sizeof actual), "Independent vector divisors crossed lanes");
+        float multiplier[4], accumulator[4];
+        for (int lane = 0; lane < 4; ++lane) {
+            multiplier[lane] = random() * 8.f - 4.f;
+            accumulator[lane] = random() * 8.f - 4.f;
+            const float product = numerator[lane] * multiplier[lane];
+            expected[lane] = accumulator[lane] + product;
+        }
+        vst1q_f32(actual, fm::madd(vld1q_f32(accumulator), vld1q_f32(numerator), vld1q_f32(multiplier)));
+        require(!std::memcmp(actual, expected, sizeof actual), "Vector multiply-add changed rounding");
+    }
+    for (float divisor : {2.f * PI, 44100.f}) {
+        const float zeros[] = {0.f, -0.f, 0.f, -0.f}; float actual[4];
+        vst1q_f32(actual, fm::divideAudioConstant(vld1q_f32(zeros), divisor, 1.0 / double(divisor)));
+        require(!std::memcmp(actual, zeros, sizeof actual), "Audio quotient changed signed zero");
+    }
+    for (int iteration = 0; iteration < 32768; ++iteration) {
+        float input[4], actual[4];
+        for (int lane = 0; lane < 4; ++lane) input[lane] = (random() - .5f) * 24.f;
+        vst1q_f32(actual, fm::clip(vld1q_f32(input)));
+        for (int lane = 0; lane < 4; ++lane)
+            require(std::isfinite(actual[lane]) && std::fabs(actual[lane] - softClip(input[lane])) <= 0x1p-21f,
+                    "Refined clipping exceeded its arithmetic error bound");
+    }
+    {
+        const float zero[] = {0.f, -0.f, 0.f, -0.f}; float actual[4];
+        vst1q_f32(actual, fm::clip(vld1q_f32(zero)));
+        require(!std::memcmp(actual, zero, sizeof actual), "Refined clipping changed signed zero");
+    }
+    const float ratios[][2] = {{1.f, 2.f}, {2.01f, 7.03f}, {1.f, 2.713f}, {1.497f, 4.197f}};
+    for (float rate : {2.f * PI, 8000.f, 22050.f, 44100.f, 48000.f, 96000.f}) {
+        for (uint32_t bits = 0x3f800000; bits < 0x40000000; bits += 4) {
+            const uint32_t words[] = {bits, bits + 1, bits + 2, bits + 3};
+            float input[4], actual[4], expected[4];
+            std::memcpy(input, words, sizeof input);
+            for (int lane = 0; lane < 4; ++lane) expected[lane] = input[lane] / rate;
+            vst1q_f32(actual, fm::divideAudioConstant(vld1q_f32(input), rate, 1.0 / double(rate)));
+            require(!std::memcmp(actual, expected, sizeof actual), "Audio constant quotient changed rounding");
+            for (int lane = 0; lane < 4; ++lane)
+                require(cachedAudioQuotient(input[lane], rate, 1.0 / double(rate)) == expected[lane],
+                        "Scalar audio quotient changed rounding");
+        }
+    }
+    for (float rate : {8000.f, 22050.f, 44100.f, 48000.f, 96000.f}) for (const auto& ratio : ratios) {
+        for (int iteration = 0; iteration < 4096; ++iteration) {
+            float frequency[4], index[4], expected[4], actual[4];
+            for (int lane = 0; lane < 4; ++lane) {
+                const float f = frequency[lane] = 1.f + random() * (rate * .48f - 1.f);
+                const float budget = max((rate * .45f - f * ratio[0]) / (f * ratio[1]) - 1.f, 0.f) / (2.f * PI);
+                index[lane] = iteration % 4 == 0 ? budget : random() * 2.f;
+                if (iteration % 4 == 1 && budget < 2.f) index[lane] = std::nextafter(budget, 0.f);
+                if (iteration % 4 == 2 && budget < 2.f) index[lane] = std::nextafter(budget, 2.f);
+                expected[lane] = f <= rate * .015f ? index[lane] : min(index[lane], budget);
+            }
+            vst1q_f32(actual, fm::limit(vld1q_f32(frequency), ratio[0], ratio[1], vld1q_f32(index), rate));
+            for (int lane = 0; lane < 4; ++lane) require(actual[lane] == expected[lane], "Vector limiter changed exact boundary result");
+            for (int lane = 0; lane < 4; ++lane) frequency[lane] = random();
+            vst1q_f32(actual, fm::sine(vld1q_f32(frequency)));
+            for (int lane = 0; lane < 4; ++lane) require(actual[lane] == sineUnit(frequency[lane]), "Vector sine changed interpolation");
+        }
+    }
+#endif
+}
+void envelopes() {
+    using namespace hexachord::native;
+    ADSR candidate;
+    ADSRShape shape;
+    int stage = 0;
+    float value = 0.f;
+    const int sizes[] = {0, 1, 7, 16, 31, 128, 257};
+    for (int block = 0; block < 4096; ++block) {
+        shape.attackInc = .001f + float(block % 41) * .001f;
+        shape.decayMult = .98f + float(block % 19) * .001f;
+        shape.sustainLevel = float(block % 17) / 16.f;
+        shape.releaseMult = .90f + float(block % 97) * .001f;
+        candidate.configure(shape);
+        if (block % 67 == 0) { stage = 1; candidate.gate(true); }
+        if (block % 67 == 29) { if (stage) stage = 4; candidate.gate(false); }
+        const int frames = sizes[block % 7];
+        std::array<float, 257> expected, actual;
+        expected.fill(123.f); actual.fill(123.f);
+        int activeFrames = frames;
+        for (int i = 0; i < frames; ++i) {
+            if (stage == 1) {
+                value += shape.attackInc;
+                if (value >= 1.f) { value = 1.f; stage = 2; }
+            } else if (stage == 2) {
+                value = shape.sustainLevel + (value - shape.sustainLevel) * shape.decayMult;
+                if (std::fabs(value - shape.sustainLevel) < .0005f) { value = shape.sustainLevel; stage = 3; }
+            } else if (stage == 3) value = shape.sustainLevel;
+            else if (stage == 4) {
+                value *= shape.releaseMult;
+                if (value < .0001f) { value = 0.f; stage = 0; }
+            }
+            if (stage == 0 && activeFrames == frames) activeFrames = i;
+            expected[i] = value;
+        }
+        require(candidate.render(actual.data(), frames) == activeFrames, "Envelope active length changed");
+        require(!std::memcmp(actual.data(), expected.data(), sizeof actual), "Envelope samples or buffer boundary changed");
+        require(candidate.isActive() == (stage != 0), "Envelope stage changed");
+    }
+}
+void effectFilters() {
+    const auto previous = hexachord_fp_enter();
+    using hexachord::native::Biquad;
+    Biquad reference[4], candidate[4];
+    Biquad* filters[] = {&candidate[0], &candidate[1], &candidate[2], &candidate[3]};
+    float expected[4][257], actual[257][4];
+    for (float rate : {8000.f, 44100.f, 48000.f, 96000.f}) {
+        for (int lane = 0; lane < 4; ++lane) {
+            reference[lane].reset(); candidate[lane].reset();
+            if (lane < 2) {
+                reference[lane].setLowpass(2800.f, .6f, rate); candidate[lane].setLowpass(2800.f, .6f, rate);
+            } else {
+                reference[lane].setHighpass(600.f, .7f, rate); candidate[lane].setHighpass(600.f, .7f, rate);
+            }
+        }
+        for (int block = 0; block < 64; ++block) {
+            for (int lane = 0; lane < 4; ++lane) for (int i = 0; i < 257; ++i)
+                actual[i][lane] = expected[lane][i] = block < 32 ? std::sin(float(i + block * 257 + lane) * .13f) : 0.f;
+            for (int lane = 0; lane < 4; ++lane) reference[lane].render(expected[lane], 0, 257);
+            for (int start = 0; start < 257; start += 13)
+                Biquad::renderFour(filters, actual, start, std::min(13, 257 - start));
+            for (int lane = 0; lane < 4; ++lane) for (int i = 0; i < 257; ++i)
+                require(actual[i][lane] == expected[lane][i], "Grouped effect filters changed samples or state");
+        }
+    }
+    hexachord_fp_restore(previous);
+}
+void floatingPoint(Effect* effect) {
+    const auto original = hexachord_fp_read();
+    const auto saved = hexachord_fp_enter();
+#if defined(__aarch64__) || (defined(__arm__) && defined(__VFP_FP__))
+    const uint64_t mask = 1ull << 24;
+#elif defined(__SSE2__)
+    const uint64_t mask = (1u << 15) | (1u << 6);
+#else
+    const uint64_t mask = 0;
+#endif
+    require(saved == original && (hexachord_fp_read() & mask) == mask, "Audio denormal protection was not enabled");
+    hexachord_fp_restore(saved);
+    require(hexachord_fp_read() == original, "FP helper changed caller state");
+    for (uint64_t mode : std::array<uint64_t, 5>{0, mask, mask | (1ull << 22), mask | (2ull << 22), mask | (3ull << 22)}) {
+#if defined(__SSE2__) && !defined(__aarch64__) && !defined(__arm__)
+        mode = mode & ~(3ull << 22);
+#endif
+        hexachord_fp_restore((original & ~mask) | mode);
+        const auto before = hexachord_fp_read();
+        float left[128]{}, right[128]{}; float* channels[] = {left, right};
+        effect->processReplacing(effect, nullptr, channels, 128);
+        require(hexachord_fp_read() == before, "Replacing process leaked FP state");
+        effect->process(effect, nullptr, channels, 128);
+        require(hexachord_fp_read() == before, "Accumulating process leaked FP state");
+    }
+    hexachord_fp_restore(original);
 }
 intptr_t host(Effect* effect, int32_t opcode, int32_t index, intptr_t, void*, float value) {
     if (opcode == 0) {
@@ -672,6 +870,9 @@ void chordPadAutomation(Effect* a, Effect* b) {
 }
 
 int main(int argc, char** argv) {
+    vectorMath();
+    envelopes();
+    effectFilters();
     require(argc == 2, "Supply plugin library path");
     void* library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     if (!library) { std::fprintf(stderr, "%s\n", dlerror()); return 1; }
@@ -684,6 +885,7 @@ int main(int argc, char** argv) {
     require(a->uniqueID == 0x48783733 && a->version == PLUG_VERSION, "Stable identity and declared plugin version");
     require(a->flags & (1 << 8), "Instrument flag");
     require(a->dispatcher(a, 0, 0, 0, nullptr, 0) == 1, "VST open");
+    floatingPoint(a);
     require(parameterText(a, 45, 0) == "HexChord 73", "VST effect name");
     require(parameterText(a, 48, 0) == "HexChord 73", "VST product name");
     require(parameterText(a, 47, 0) == "Twisted Cable", "VST vendor name");

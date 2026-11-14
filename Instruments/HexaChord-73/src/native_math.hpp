@@ -16,6 +16,17 @@ namespace hexachord::native {
 
 inline constexpr float PI = 3.141592653589793f;
 
+inline float cachedAudioQuotient(float numerator, float denominator, double reciprocal) {
+#if defined(__arm__) && !defined(__aarch64__)
+    // Bounded oscillator quotients retain binary32 rounding with binary64 guard bits.
+    (void)denominator;
+    return float(double(numerator) * reciprocal);
+#else
+    (void)reciprocal;
+    return numerator / denominator;
+#endif
+}
+
 inline float clamp(float value, float low, float high) {
     return value < low ? low : (value > high ? high : value);
 }

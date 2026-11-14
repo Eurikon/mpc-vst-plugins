@@ -1,14 +1,20 @@
 #include "native_dsp.hpp"
+#include "native_fp.h"
 #include "hexachord_params.h"
 extern "C" {
 #include "engine.h"
 }
 #include <atomic>
+#include <array>
 #include <cerrno>
+#include <charconv>
+#include <cfenv>
 #include <cmath>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <clocale>
 #include <mutex>
 #include <new>
 
@@ -48,10 +54,16 @@ float initialValue(int i) {
         return std::sqrt((p.initial - p.minimum) / (p.maximum - p.minimum));
     return p.initial;
 }
+float finiteClamp(float value, float minimum, float maximum) {
+    // Preserve the library's signed-zero choice at zero bounds.
+    if (value == 0.f && (minimum == 0.f || maximum == 0.f)) return std::fmax(minimum, std::fmin(maximum, value));
+    return value < minimum ? minimum : value > maximum ? maximum : value;
+}
 struct Engine {
     hexachord::native::Dsp dsp;
     std::atomic<float> values[parameterCount];
     std::atomic<float> chordPad[2];
+    float chordPositions[8][4][2]{};
     std::atomic<bool> chordPadPending{false};
     std::atomic<float> meters[3]{};
     std::atomic<unsigned> revision{0};
@@ -67,6 +79,13 @@ struct Engine {
     unsigned parameterSnapshots = 0;
 #endif
     Engine() {
+        for (int chord = 0; chord < 8; ++chord) for (int voicing = 0; voicing < 4; ++voicing) {
+            const double angle = float(chord) * pi / 4;
+            const double radius = voicingRadii[voicing] / chordPadScale;
+            chordPositions[chord][voicing][0] = float(.5 + .5 * radius * std::sin(angle));
+            const double vertical = .5 * radius * std::cos(angle);
+            chordPositions[chord][voicing][1] = float(.5 + (chordPadYIncreasesUp ? vertical : -vertical));
+        }
         for (auto& position : chordPad) position.store(.5f, std::memory_order_relaxed);
         for (auto& meter : meters) meter.store(0.f, std::memory_order_relaxed);
         for (int i = 0; i < parameterCount; ++i) {
@@ -174,13 +193,59 @@ void midi(void* instance, const uint8_t* message, int length) {
         }
     });
 }
+constexpr unsigned keyHash(const char* key) {
+    unsigned result = 2166136261u;
+    while (*key) result = (result ^ static_cast<unsigned char>(*key++)) * 16777619u;
+    return result;
+}
+constexpr auto parameterIndex() {
+    std::array<int, 64> result{};
+    for (auto& index : result) index = -1;
+    for (int index = 0; index < parameterCount; ++index) {
+        unsigned slot = keyHash(hexachord::parameters[index].key) & 63u;
+        while (result[slot] >= 0) slot = (slot + 1) & 63u;
+        result[slot] = index;
+    }
+    return result;
+}
 int indexOf(const char* key) {
-    for (int i = 0; i < parameterCount; ++i) if (!std::strcmp(key, hexachord::parameters[i].key)) return i;
+    static constexpr auto indices = parameterIndex();
+    unsigned slot = keyHash(key) & 63u;
+    while (indices[slot] >= 0) {
+        const int index = indices[slot];
+        if (!std::strcmp(key, hexachord::parameters[index].key)) return index;
+        slot = (slot + 1) & 63u;
+    }
     return -1;
 }
 bool number(const char* text, float& value) {
-    char* end = nullptr;
     errno = 0;
+    const char* cursor = text;
+    const bool negative = *cursor == '-';
+    if (negative || *cursor == '+') ++cursor;
+    unsigned integer = 0, digits = 0;
+    while (*cursor >= '0' && *cursor <= '9' && digits < 7) {
+        integer = integer * 10 + unsigned(*cursor++ - '0');
+        ++digits;
+    }
+    if (digits && !*cursor) {
+        value = negative ? -float(integer) : float(integer);
+        return true;
+    }
+    if (*cursor == '.') {
+        ++cursor;
+        unsigned places = 0;
+        while (*cursor >= '0' && *cursor <= '9' && digits < 7) {
+            integer = integer * 10 + unsigned(*cursor++ - '0');
+            ++digits; ++places;
+        }
+        if (digits && !*cursor) {
+            static constexpr double divisor[] = {1., 10., 100., 1000., 10000., 100000., 1000000., 10000000.};
+            value = float((negative ? -double(integer) : double(integer)) / divisor[places]);
+            return true;
+        }
+    }
+    char* end = nullptr;
     value = std::strtof(text, &end);
     return end != text && *end == 0 && errno != ERANGE && std::isfinite(value);
 }
@@ -209,17 +274,16 @@ bool parseState(const char* text, float* values) {
     return *cursor == 0;
 }
 void alignChordPad(Engine& e) {
-    const double angle = e.values[0].load(std::memory_order_relaxed) * pi / 4;
-    const double radius = voicingRadii[int(e.values[1].load(std::memory_order_relaxed))] / chordPadScale;
-    e.chordPad[0].store(float(.5 + .5 * radius * std::sin(angle)), std::memory_order_relaxed);
-    const double vertical = .5 * radius * std::cos(angle);
-    e.chordPad[1].store(float(.5 + (chordPadYIncreasesUp ? vertical : -vertical)), std::memory_order_relaxed);
+    const int chord = int(e.values[0].load(std::memory_order_relaxed));
+    const int voicing = int(e.values[1].load(std::memory_order_relaxed));
+    e.chordPad[0].store(e.chordPositions[chord][voicing][0], std::memory_order_relaxed);
+    e.chordPad[1].store(e.chordPositions[chord][voicing][1], std::memory_order_relaxed);
     e.chordPadPending.store(false, std::memory_order_release);
 }
 void setChordPad(Engine& e, int axis, float value) {
     std::lock_guard<std::mutex> lock(e.writer);
     // XY handles arrive separately; commit their latest pair at an audio-block boundary.
-    e.chordPad[axis].store(std::fmax(0.f, std::fmin(1.f, value)), std::memory_order_relaxed);
+    e.chordPad[axis].store(finiteClamp(value, 0.f, 1.f), std::memory_order_relaxed);
     e.chordPadPending.store(true, std::memory_order_release);
 }
 void applyChordPad(Engine& e) {
@@ -270,9 +334,12 @@ void setParam(void* instance, const char* key, const char* text) {
     int i = indexOf(key);
     float value;
     if (i < 0 || !number(text, value)) return;
-    value = std::fmax(hostMinimum(i), std::fmin(hostMaximum(i), value));
+    value = finiteClamp(value, hostMinimum(i), hostMaximum(i));
     if (hexachord::parameters[i].stepped) value = std::round(value);
     std::lock_guard<std::mutex> lock(e.writer);
+    const float previous = e.values[i].load(std::memory_order_relaxed);
+    // Chord selectors must still realign the touch point when their value is unchanged.
+    if (i >= 2 && value == previous && std::signbit(value) == std::signbit(previous)) return;
     e.revision.fetch_add(1, std::memory_order_acq_rel);
     std::atomic_thread_fence(std::memory_order_release);
     e.values[i].store(value, std::memory_order_relaxed);
@@ -280,6 +347,19 @@ void setParam(void* instance, const char* key, const char* text) {
     e.revision.fetch_add(1, std::memory_order_release);
 }
 int formatValue(char* buffer, int length, float value, const char* format = "%.9g") {
+    if (value >= -99999999.f && value <= 99999999.f && value == float(int(value)) &&
+        !(value == 0.f && std::signbit(value)) && !std::strcmp(format, "%.9g")) {
+        const auto result = std::to_chars(buffer, buffer + length - 1, int(value));
+        if (result.ec != std::errc{}) { buffer[0] = 0; return 0; }
+        *result.ptr = 0;
+        return int(result.ptr - buffer);
+    }
+    if (!std::strcmp(format, "%.9g")) {
+        const auto result = std::to_chars(buffer, buffer + length - 1, value, std::chars_format::general, 9);
+        if (result.ec != std::errc{}) { buffer[0] = 0; return 0; }
+        *result.ptr = 0;
+        return int(result.ptr - buffer);
+    }
     int written = std::snprintf(buffer, length, format, value);
     if (written < 0 || written >= length) { buffer[0] = 0; return 0; }
     return written;
@@ -314,10 +394,14 @@ int getParam(void* instance, const char* key, char* buffer, int length) {
     int i = indexOf(key);
     bool display = false;
     if (i < 0) {
-        for (int n = 0; n < parameterCount; ++n) {
-            char candidate[64];
-            std::snprintf(candidate, sizeof candidate, "%s_display", hexachord::parameters[n].key);
-            if (!std::strcmp(key, candidate)) { i = n; display = true; break; }
+        const size_t length = std::strlen(key);
+        if (length > 8 && !std::strcmp(key + length - 8, "_display")) {
+            for (int n = 0; n < parameterCount; ++n) {
+                const char* name = hexachord::parameters[n].key;
+                if (std::strlen(name) == length - 8 && !std::strncmp(key, name, length - 8)) {
+                    i = n; display = true; break;
+                }
+            }
         }
     }
     if (i < 0) return 0;
@@ -326,7 +410,7 @@ int getParam(void* instance, const char* key, char* buffer, int length) {
         value = physicalValue(i, value);
         if (hexachord::parameters[i].curve != hexachord::Curve::Linear) {
             if (!std::isfinite(value)) return 0;
-            value = std::fmax(hexachord::parameters[i].minimum, std::fmin(hexachord::parameters[i].maximum, value));
+            value = finiteClamp(value, hexachord::parameters[i].minimum, hexachord::parameters[i].maximum);
             return formatValue(buffer, length, value, "%.0f");
         }
     }
@@ -336,7 +420,7 @@ int16_t pcm(float value) {
     if (!std::isfinite(value)) return 0;
     if (value >= 32767.f / 32768.f) return 32767;
     if (value <= -1.f) return -32768;
-    return static_cast<int16_t>(std::lrintf(value * 32768.f));
+    return static_cast<int16_t>(hexachord_round_sample(value * 32768.f));
 }
 void render(void* instance, int16_t* output, int frames) {
     if (!output || frames <= 0) return;
@@ -371,7 +455,48 @@ const mpc_engine_t api = {create, destroy, midi, setParam, getParam, render, nul
 }
 
 extern "C" const mpc_engine_t* mpc_engine() { return &api; }
+extern "C" int hexachord_chord_pending(void* instance) {
+    return instance && static_cast<Engine*>(instance)->chordPadPending.load(std::memory_order_acquire);
+}
+extern "C" int hexachord_snprintf(char* buffer, size_t capacity, const char* format, ...) {
+    va_list arguments;
+    va_start(arguments, format);
+    char encoded[64];
+    std::to_chars_result converted{encoded, std::errc::invalid_argument};
+    if (!std::strcmp(format, "%d"))
+        converted = std::to_chars(encoded, encoded + sizeof encoded, va_arg(arguments, int));
+    else if (!std::strcmp(format, "%ld"))
+        converted = std::to_chars(encoded, encoded + sizeof encoded, va_arg(arguments, long));
+#if defined(__linux__)
+    else if (!std::strcmp(format, "%g") && std::fegetround() == FE_TONEAREST) {
+        const auto* locale = std::localeconv();
+        if (locale->decimal_point[0] == '.' && locale->decimal_point[1] == 0) {
+            va_list numeric;
+            va_copy(numeric, arguments);
+            const double value = va_arg(numeric, double);
+            va_end(numeric);
+            if (std::isfinite(value))
+                converted = std::to_chars(encoded, encoded + sizeof encoded, value, std::chars_format::general, 6);
+        }
+    }
+#endif
+    if (converted.ec == std::errc{}) {
+        const auto length = size_t(converted.ptr - encoded);
+        if (capacity) {
+            const auto copied = length < capacity ? length : capacity - 1;
+            std::memcpy(buffer, encoded, copied);
+            buffer[copied] = 0;
+        }
+        va_end(arguments);
+        return int(length);
+    }
+    const int result = std::vsnprintf(buffer, capacity, format, arguments);
+    va_end(arguments);
+    return result;
+}
 #ifdef HEXACHORD_TESTING
+extern "C" int hexachord_test_number(const char* text, float* value) { return number(text, *value); }
+extern "C" int16_t hexachord_test_pcm(float value) { return pcm(value); }
 extern "C" unsigned hexachord_test_parameter_snapshots(void* instance) {
     return instance ? static_cast<Engine*>(instance)->parameterSnapshots : 0;
 }

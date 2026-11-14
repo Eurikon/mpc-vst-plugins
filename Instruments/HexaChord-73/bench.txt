@@ -1,1 +1,1 @@
-{"plugin":"./plugin.so","instrument":1,"open_ms":2.3,"p99_pct":22.5,"max_pct":23.5,"threads_pct":0.0,"verdict":"WARN"}
+{"plugin": "./plugin.so", "instrument": 1, "open_ms": 2.3, "p99_pct": 13.7, "max_pct": 17.4, "threads_pct": 0.0, "verdict": "PASS"}

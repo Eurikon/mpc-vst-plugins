@@ -69,7 +69,11 @@ if [[ "$mode" = arm ]]; then
         g++ -shared -Wl,--no-undefined -Wl,--exclude-libs,ALL -static-libstdc++ -static-libgcc "$out/engine-0.o" "$out/engine-1.o" "$out/vst-wrapper.o" -pthread -lm -flto=2 "${architecture[@]}" -o "$out/hexachord-73.so"
         strip "$out/hexachord-73.so"
         cp "$out/hexachord-73.so" "$destination/hexachord-73.so"
-        readelf -h "$destination/hexachord-73.so"'
+        readelf -h "$destination/hexachord-73.so"
+        g++ -std=c++17 "${flags[@]}" tests/vst_host_test.cpp -static-libstdc++ -static-libgcc -ldl -lm -flto=2 -o "$out/vst-test"
+        "$out/vst-test" "$destination/hexachord-73.so"
+        g++ -std=c++17 "${flags[@]}" -DHEXACHORD_TESTING tests/native_engine_test.cpp src/engine.cpp "$out/engine-0.o" -static-libstdc++ -static-libgcc -lm -flto=2 -o "$out/engine-test"
+        "$out/engine-test"'
     done
     exit
 fi
